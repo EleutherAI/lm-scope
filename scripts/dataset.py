@@ -1,12 +1,6 @@
 from datasets import list_datasets, load_dataset
 
 
-wikipedia_dataset = load_dataset('wikipedia', '20200501.en')
-lama_dataset = load_dataset('lama', 'google_re')
-
-num_examples = len(wikipedia_dataset['train']) + len(lama_dataset['train'])
-
-
 def clean_text(text):
     original = text
 
@@ -63,15 +57,21 @@ def clean_text(text):
 class CombinedDataset:
     def __init__(self, limit):
         print('cleaning & loading data...')
+
+        self.wikipedia_dataset = load_dataset('wikipedia', '20200501.en')
+        self.lama_dataset = load_dataset('lama', 'google_re')
+
         self.examples = []
+
+        # factual knowledge probing with Wikipedia first sentences
         for idx, record in enumerate(wikipedia_dataset['train']):
             text = record['text']
             text = clean_text(text)
             self.examples.append({ 'text': text, 'source': 'wikipedia' })
-            if idx > 6000:
-                break
             if len(self.examples) == limit:
                 break
+
+        # factual knowledge probing with LAMA
         for record in lama_dataset['train']:
             text = record['masked_sentence']
             text = text.replace('[MASK]', record['obj_label'])
@@ -86,4 +86,8 @@ class CombinedDataset:
     def __iter__(self):
         for e in self.examples:
             yield e
+
+if __name__ == '__main__':
+    d = CombinedDataset(float('inf'))
+    print(len(d))
 
