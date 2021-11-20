@@ -1,84 +1,44 @@
 from datasets import list_datasets, load_dataset
-
-
-def clean_text(text):
-    original = text
-
-    # we probably won't need more than 1k characters
-    text = text[:1000]
-
-    # remove parenthesized portions
-    k1 = 0
-    k2 = 0
-    k3 = 0
-    new_text = ''
-    for i in range(len(text)):
-        if text[i] == '(':
-            k1 += 1
-        elif text[i] == ')':
-            k1 -= 1
-        elif text[i] == '[':
-            k2 += 1
-        elif text[i] == ']':
-            k2 -= 1
-        elif text[i] == '{':
-            k3 += 1
-        elif text[i] == '}':
-            k3 -= 1
-        else:
-            if k1 == 0 and k2 == 0 and k3 == 0:
-                new_text += text[i]
-    text = new_text
-
-    # fix strange punctuation
-    text = text.replace(' .', '.')
-    text = text.replace(' ,', ',')
-    text = text.replace(' ; ', '')
-
-    # put everything on one line
-    text = ' '.join(text.split('\n'))
-
-    # clean up white space
-    text = ' '.join(text.split()).strip()
-
-    # possible degenerate cases
-    if len(text) < 5:
-        return
-
-    # only take the first few tokens
-    num_tokens = 30
-    text = text[:num_tokens * 10]
-    tokens = tokenizer.encode(text)
-    tokens = tokens[:num_tokens]
-    text = tokenizer.decode(tokens)
-    return text
+from transformers import AutoTokenizer
+from tqdm import tqdm
+import jsonlines
+import os
+import sys
 
 
 class CombinedDataset:
-    def __init__(self, limit):
+    def __init__(self, tokenizer, limit=-1):
         print('cleaning & loading data...')
 
-        self.wikipedia_dataset = load_dataset('wikipedia', '20200501.en')
+        self.tokenizer = tokenizer
         self.lama_dataset = load_dataset('lama', 'google_re')
 
         self.examples = []
 
-        # factual knowledge probing with Wikipedia first sentences
-        for idx, record in enumerate(wikipedia_dataset['train']):
-            text = record['text']
-            text = clean_text(text)
-            self.examples.append({ 'text': text, 'source': 'wikipedia' })
-            if len(self.examples) == limit:
-                break
+        self.wikipedia_fn = './data/wikipedia.jsonl'
 
-        # factual knowledge probing with LAMA
-        for record in lama_dataset['train']:
-            text = record['masked_sentence']
-            text = text.replace('[MASK]', record['obj_label'])
-            text = clean_text(text)
-            self.examples.append({ 'text': text, 'source': 'google_re' })
-            if len(self.examples) == limit:
-                break
+        # TODO: download wikipedia dataset automatically
+        if not os.path.exists(self.wikipedia_fn):
+            print('You must first download the preprocessed Wikipedia dataset')
+            sys.exit(1)
+
+        print('Loading Wikipedia dataset (this may take a few minutes)')
+        with jsonlines.open(self.wikipedia_fn, mode='r') as reader:
+            for example in reader:
+                if len(self) == limit:
+                    break
+                self.examples.append(example)
+
+        print('Loading LAMA dataset')
+        with jsonlines.open(self.wikipedia_fn, mode='w') as writer:
+            for record in self.lama_dataset['train']:
+                text = record['masked_sentence']
+                text = text.replace('[MASK]', record['obj_label'])
+                example = { 'text': text, 'source': 'google_re' }
+                self.examples.append(example)
+                writer.write(example)
+                if len(self) == limit:
+                    break
 
     def __len__(self):
         return len(self.examples)
@@ -87,7 +47,9 @@ class CombinedDataset:
         for e in self.examples:
             yield e
 
+
 if __name__ == '__main__':
-    d = CombinedDataset(float('inf'))
+    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
+    d = CombinedDataset(tokenizer)
     print(len(d))
 
