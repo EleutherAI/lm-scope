@@ -2,7 +2,7 @@ from datasets import list_datasets, load_dataset
 import jsonlines
 
 
-def clean(self, text):
+def clean(text):
     original = text
 
     # we probably won't need more than 200 characters
@@ -55,13 +55,24 @@ def clean(self, text):
     return text
 
 
-self.wikipedia_dataset = load_dataset('wikipedia', '20200501.en')
+def get_categories(text):
+    categories = []
+    for m in re.findall('Category:([^\n]*)$', text, re.MULTILINE):
+        categories.append(m)
+    return categories
+
+
+wikipedia_dataset = load_dataset('wikipedia', '20200501.en')
 
 with jsonlines.open('./data/wikipedia.jsonl', mode='w') as writer:
-    for idx, record in enumerate(tqdm(self.wikipedia_dataset['train'])):
-        if idx >= len(self.examples_wikipedia):
-            writer.write({
-                'text': clean(record['text']),
-                'source': 'wikipedia',
-            })
+    for idx, record in enumerate(tqdm(wikipedia_dataset['train'])):
+        text = clean(record['text'])
+        categories = get_categories(record['text'])
+        writer.write({
+            'text': text,
+            'source': 'wikipedia',
+            'meta': {
+                'categories': categories,
+            }
+        })
 
