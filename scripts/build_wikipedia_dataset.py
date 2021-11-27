@@ -6,7 +6,7 @@ def clean(text):
     original = text
 
     # we probably won't need more than 200 characters
-    text = text[:200]
+    text = text[:400]
 
     # remove parenthesized portions
     k1 = 0
@@ -64,7 +64,7 @@ def get_categories(text):
 
 wikipedia_dataset = load_dataset('wikipedia', '20200501.en')
 
-with jsonlines.open('./data/wikipedia.jsonl', mode='w') as writer:
+with jsonlines.open('wikipedia-first-lines.jsonl', mode='w') as writer:
     for idx, record in enumerate(tqdm(wikipedia_dataset['train'])):
         text = clean(record['text'])
         categories = get_categories(record['text'])
