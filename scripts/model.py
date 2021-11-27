@@ -114,9 +114,13 @@ class ModelWatcher:
             per_layer_tokens.append(top_in_sequence)
         return per_layer_tokens
 
-    def extract_activations(self):
+    def extract_attentions(self):
         scores = self.hidden_states['attentions']
         return torch.stack([a.to(main_device) for a in scores]).tolist()
+
+    def extract_neuron_desc(self):
+        # TODO
+        return None
 
     def forward(self, text):
         inputs = tokenizer(text, return_tensors="pt")
