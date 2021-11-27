@@ -1,13 +1,14 @@
-from datasets import list_datasets, load_dataset
 import jsonlines
 import re
+
+from datasets import list_datasets, load_dataset
+from tqdm import tqdm
+
+from sentence_sampler import SentenceSampler
 
 
 def clean(text):
     original = text
-
-    # we probably won't need more than 200 characters
-    text = text[:400]
 
     # remove parenthesized portions
     k1 = 0
@@ -37,6 +38,9 @@ def clean(text):
     text = text.replace(' ,', ',')
     text = text.replace(' ; ', '')
 
+    # remove tail sections
+    text = clip_tail_sections(text)
+
     # put everything on one line
     text = ' '.join(text.split('\n'))
 
@@ -47,8 +51,9 @@ def clean(text):
     if len(text) < 5:
         return
 
-    # only take the first few tokens
-    num_tokens = 30
+    return text
+
+def first_n_tokens(text, num_tokens):
     text = text[:num_tokens * 10]
     tokens = tokenizer.encode(text)
     tokens = tokens[:num_tokens]
@@ -62,12 +67,21 @@ def get_categories(text):
         categories.append(m)
     return categories
 
+def clip_tail_sections(text):
+    return re.sub('\n(References|See also|Category:.*)\s*(\n|$).*$', "", text, flags=re.DOTALL)
 
 wikipedia_dataset = load_dataset('wikipedia', '20200501.en')
 
-with jsonlines.open('wikipedia-first-lines.jsonl', mode='w') as writer:
+sampler = SentenceSampler()
+
+with jsonlines.open('wikipedia-random-sentences.jsonl', mode='w') as writer:
     for idx, record in enumerate(tqdm(wikipedia_dataset['train'])):
-        text = clean(record['text'])
+        text = record['text']
+        text = clean(text)
+        if text is None:
+            continue
+
+        text = sampler.get_random_sentence(text)
         categories = get_categories(record['text'])
         writer.write({
             'text': text,
@@ -77,3 +91,16 @@ with jsonlines.open('wikipedia-first-lines.jsonl', mode='w') as writer:
             }
         })
 
+with jsonlines.open('wikipedia-first-lines.jsonl', mode='w') as writer:
+    for idx, record in enumerate(tqdm(wikipedia_dataset['train'])):
+        text = record['text'][:400]
+        text = clean(text)
+        text = first_n_tokens(text, 30)
+        categories = get_categories(record['text'])
+        writer.write({
+            'text': text,
+            'source': 'wikipedia',
+            'meta': {
+                'categories': categories,
+            }
+        })
