@@ -3,9 +3,11 @@ import re
 
 from datasets import list_datasets, load_dataset
 from tqdm import tqdm
+from transformers import AutoTokenizer
 
 from sentence_sampler import SentenceSampler
 
+tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
 
 def clean(text):
     original = text
@@ -55,8 +57,10 @@ def clean(text):
 
 def first_n_tokens(text, num_tokens):
     text = text[:num_tokens * 10]
+    tokens = tokenizer.encode(text)[:num_tokens]
     tokens = tokenizer.encode(text)
     tokens = tokens[:num_tokens]
+
     text = tokenizer.decode(tokens)
     return text
 
@@ -76,8 +80,7 @@ sampler = SentenceSampler()
 
 with jsonlines.open('wikipedia-random-sentences.jsonl', mode='w') as writer:
     for idx, record in enumerate(tqdm(wikipedia_dataset['train'])):
-        text = record['text']
-        text = clean(text)
+        text = clean(record['text'])
         if text is None:
             continue
 
@@ -95,6 +98,9 @@ with jsonlines.open('wikipedia-first-lines.jsonl', mode='w') as writer:
     for idx, record in enumerate(tqdm(wikipedia_dataset['train'])):
         text = record['text'][:400]
         text = clean(text)
+        if text is None:
+            continue
+
         text = first_n_tokens(text, 30)
         categories = get_categories(record['text'])
         writer.write({
