@@ -7,6 +7,7 @@ from dataset import CombinedDataset
 from model import ModelWatcher
 from extract import extract_logit_lens, extract_neuron_values
 from utils import StopWatch
+from pickler import BatchPickler
 
 
 def main(max_num_tokens: int = 2048,
@@ -22,6 +23,7 @@ def main(max_num_tokens: int = 2048,
     print(f'Found {len(devices)} CUDA devices.')
 
     dataset = CombinedDataset()
+    # TODO: multiple checkpoints
     watcher = ModelWatcher()
     pickler = BatchPickler("output/neurons.pickle", file_size_goal, compress_upload)
     timer = StopWatch()
@@ -52,7 +54,7 @@ def main(max_num_tokens: int = 2048,
                 timer.stop('logits')
 
                 timer.start('attn')
-                attentions = watcher.extract_activations()
+                attentions = watcher.extract_attentions()
                 timer.stop('attn')
 
                 record = {

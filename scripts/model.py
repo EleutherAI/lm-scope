@@ -62,7 +62,7 @@ class ModelWatcher:
         high_activations = []
         for name in self.module_names_to_track_for_activations:
             h = self.hidden_states[name]['input'][0]
-            high_activations.append((h > threshold).nonzero())
+            high_activations.append((h[1:, :] > threshold).nonzero())
             neurons.append(h)
 
         for layer_idx, (neurons, (_, feature_idx)) in enumerate(zip(neurons, high_activations)):
