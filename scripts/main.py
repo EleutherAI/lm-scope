@@ -2,10 +2,10 @@ import gc
 from tqdm import tqdm
 from functools import partial
 import fire
+import torch
 
 from dataset import CombinedDataset
 from model import ModelWatcher
-from extract import extract_logit_lens, extract_neuron_values
 from utils import StopWatch
 from pickler import BatchPickler
 
@@ -13,16 +13,17 @@ from pickler import BatchPickler
 def main(max_num_tokens: int = 2048,
          top_k: int = 5,
          activation_threshold: int = 3,
-         # stop after this many records in the dataset have been processed
+         dataset_offset: int = 0,
          dataset_limit: int = 999999999,
+         data_dir: str = '/mnt/data',
          # how many bytes to pickle into a single file before compressing it and starting a new file
          file_size_goal: int = 128 * 1024 * 1024,
          verbose: bool = True):
 
-    devices = [torch.cuda(f'cuda:{i}') for i in range(torch.cuda.device_count())]
+    devices = [torch.device(f'cuda:{i}') for i in range(torch.cuda.device_count())]
     print(f'Found {len(devices)} CUDA devices.')
 
-    dataset = CombinedDataset()
+    dataset = CombinedDataset(data_dir)
     # TODO: multiple checkpoints
     watcher = ModelWatcher()
     pickler = BatchPickler("output/neurons.pickle", file_size_goal, compress_upload)
