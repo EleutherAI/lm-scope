@@ -87,7 +87,7 @@ def main(max_num_tokens: int = 30,
     num_rows_per_worker = dataset_limit // num_workers
     row_distribution = [num_rows_per_worker + (1 if i < dataset_limit % num_workers else 0) for i in range(num_workers)]
     ps = []
-    offset = 0
+    offset = dataset_offset
     for proc, num_rows in enumerate(row_distribution):
         print('Starting process', proc)
         p = Process(target=worker, args=(
