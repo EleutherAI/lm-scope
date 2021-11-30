@@ -7,26 +7,18 @@ from utils import cached_decode_tok, StopWatch
 
 
 class ModelWatcher:
-    def __init__(self, checkpoint_fn, max_num_tokens, top_k, activation_threshold):
+    def __init__(self, model, max_num_tokens, top_k, activation_threshold):
 
-        self.checkpoint_fn = checkpoint_fn
+        self.model = model
         self.max_num_tokens = max_num_tokens
         self.top_k = top_k
         self.activation_threshold = activation_threshold
 
-        device_map = self._get_device_map(num_layers=28)
-        print('Device map:', device_map)
-        self.devices = [torch.device(f'cuda:{i}') for i in device_map.keys()]
+        self.devices = [torch.device(f'cuda:{i}') for i in range(torch.cuda.device_count())]
+        
+        self.tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
 
         self.timer = StopWatch()
-
-        print('Loading model...')
-        self.tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
-        state_dict = torch.load(self.checkpoint_fn)
-        self.model = GPTJForCausalLM.from_pretrained(None, state_dict=state_dict, config="EleutherAI/gpt-j-6B")
-        print(f'Parallelizing on {len(device_map)} GPUs...')
-        self.model.parallelize(device_map)
-        self.model.eval()
 
         print('Setting up handlers...')
         self.module_names_to_track_for_activations = \
@@ -43,17 +35,6 @@ class ModelWatcher:
                 cnt += 1
                 handle = m.register_forward_hook(partial(self._save_hidden_states, name))
                 self.handles.append(handle)
-
-    def _get_device_map(self, num_layers):
-        device_ids = list(range(torch.cuda.device_count()))
-        num_layers_per_device = num_layers // len(device_ids)
-        layer_distribution = [num_layers_per_device + (1 if i < num_layers % len(device_ids) else 0) for i in device_ids]
-        device_map = {}
-        c = 0
-        for i, l in enumerate(layer_distribution):
-            device_map[i] = list(range(c, c+l))
-            c += l
-        return device_map
 
     def _save_hidden_states(self, name, module, input, output):
         # we care about input for activations, and output for logit lens
@@ -80,22 +61,21 @@ class ModelWatcher:
         high_activations = []
         for name in self.module_names_to_track_for_activations:
             h = self.hidden_states[name]['input'][0]
-            print(h.shape)
             high_activations.append((h > threshold).nonzero())
             neurons.append(h)
 
-        print(high_activations[0].shape)
-        for layer_idx, (neurons, (_, feature_idx)) in enumerate(zip(neurons, high_activations)):
-            feature_idx = feature_idx.item()
-            if (layer_idx, feature_idx) in uniq:
-                # we already have it
-                continue
-            uniq.add((layer_idx, feature_idx))
-            values.append({
-                'l': layer_idx,
-                'f': feature_idx,
-                'a': neurons[layer_idx, :, feature_idx].reshape([neurons.shape[1]]).tolist(),
-            })
+        for layer_idx, activations in enumerate(high_activations):
+            for (_, feature_idx) in activations:
+                feature_idx = feature_idx.item()
+                if (layer_idx, feature_idx) in uniq:
+                    # we already have it
+                    continue
+                uniq.add((layer_idx, feature_idx))
+                values.append({
+                    'l': layer_idx,
+                    'f': feature_idx,
+                    'a': neurons[layer_idx][:, feature_idx].reshape([neurons[layer_idx].shape[0]]).tolist(),
+                })
         return values
 
     def _extract_logit_lens(self, k=5):
@@ -136,7 +116,7 @@ class ModelWatcher:
 
     def _extract_attentions(self):
         scores = self.hidden_states['attentions']
-        return torch.stack([a.to(main_device) for a in scores]).tolist()
+        return torch.stack([a.to(self.devices[0]) for a in scores]).tolist()
 
     def _extract_neuron_desc(self):
         # TODO
@@ -165,8 +145,6 @@ class ModelWatcher:
         self.timer.start('attn')
         attentions = self._extract_attentions()
         self.timer.stop('attn')
-
-        print('Made it!')
 
         return {
             'text': text,

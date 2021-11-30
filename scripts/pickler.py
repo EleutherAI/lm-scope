@@ -37,11 +37,11 @@ class BatchPickler:
             self.file.close()
             self.file = None
 
-            # compress and upload the file
-            self.save_file_func(self.cur_file_name)
+#             # compress and upload the file
+#             self.save_file_func(self.cur_file_name)
 
-            # remove the file
-            os.remove(self.cur_file_name)
+#             # remove the file
+#             os.remove(self.cur_file_name)
 
             # mark the batch as finished
             self.cur_file_name = None
