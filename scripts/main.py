@@ -6,11 +6,25 @@ import torch
 import os
 from transformers import AutoTokenizer, GPTJForCausalLM
 from multiprocessing import Process, Queue
+from azure.storage.blob import BlockBlobService
 
 from dataset import CombinedDataset
 from watcher import ModelWatcher
 from pickler import BatchPickler
 from utils import make_device_map
+
+
+def upload_file(local_fn):
+    blob_service_client = BlockBlobService(account_name=os.environ['AZ_ACCOUNT_NAME'], account_key=os.environ['AZ_ACCOUNT_KEY'])
+    blob_path = 'raw/' + local_fn.split('/')[-1]
+    print('Uploading', local_fn, 'to blob path', blob_path)
+    blob_service_client.create_blob_from_path(os.environ['AZ_CONTAINER_NAME'], blob_path, local_fn)
+
+def run_upload_test():
+    with open('test.txt', 'w') as f:
+        f.write('Hello, world!')
+    upload_file('test.txt')
+    print('upload test done')
 
 
 def worker(max_num_tokens: int = 30,
@@ -23,12 +37,12 @@ def worker(max_num_tokens: int = 30,
            # how many bytes to pickle into a single file before compressing it and starting a new file
            file_size_goal: int = 128 * 1024 * 1024,
            show_times: bool = False):
-    
+
     devices = [torch.device(f'cuda:{i}') for i in range(torch.cuda.device_count())]
     print(f'Found {len(devices)} CUDA devices.')
 
     device_map = make_device_map(num_layers=28, num_devices=len(devices))
-    
+
     print('Loading dataset...')
     dataset = CombinedDataset(data_dir, offset=dataset_offset, limit=dataset_limit)
 
@@ -40,14 +54,14 @@ def worker(max_num_tokens: int = 30,
     model.parallelize(device_map)
     model.eval()
     print('done')
-    
+
     watcher = ModelWatcher(model=model, max_num_tokens=max_num_tokens, top_k=top_k, activation_threshold=activation_threshold)
-    output_dir = os.path.join(data_dir, "output")
+    output_dir = "output"
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     base_neuron_fn = os.path.join(output_dir, f"neurons{dataset_offset}-{dataset_offset+dataset_limit}.pickle")
-    pickler = BatchPickler(base_neuron_fn, file_size_goal, lambda *args: None)
-    
+    pickler = BatchPickler(base_neuron_fn, file_size_goal, upload_file)
+
     try:
         with torch.no_grad():
             for idx, row in enumerate(tqdm(dataset)):
@@ -83,6 +97,8 @@ def main(max_num_tokens: int = 30,
          file_size_goal: int = 128 * 1024 * 1024,
          show_times: bool = False,
          num_workers: int = 1):
+
+    run_upload_test()
 
     num_rows_per_worker = dataset_limit // num_workers
     row_distribution = [num_rows_per_worker + (1 if i < dataset_limit % num_workers else 0) for i in range(num_workers)]
