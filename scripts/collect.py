@@ -7,6 +7,7 @@ import os
 from transformers import AutoTokenizer, GPTJForCausalLM
 from multiprocessing import Process, Queue
 from azure.storage.blob import BlockBlobService
+import time
 
 from dataset import CombinedDataset
 from watcher import ModelWatcher
@@ -20,11 +21,20 @@ def upload_file(local_fn):
     print('Uploading', local_fn, 'to blob path', blob_path)
     blob_service_client.create_blob_from_path(os.environ['AZ_CONTAINER_NAME'], blob_path, local_fn)
 
+
 def run_upload_test():
     with open('test.txt', 'w') as f:
         f.write('Hello, world!')
     upload_file('test.txt')
     print('upload test done')
+
+
+#def uploader():
+#    while True:
+#        for fn in os.listdir('output'):
+#            upload_file(local_fn)
+#            os.remove(local_fn)
+#        time.sleep(5)
 
 
 def worker(max_num_tokens: int = 30,
@@ -86,7 +96,7 @@ def worker(max_num_tokens: int = 30,
         pickler.close()
 
 
-def main(max_num_tokens: int = 30,
+def main(max_num_tokens: int = 2048,
          top_k: int = 5,
          activation_threshold: int = 3,
          dataset_offset: int = 0,
@@ -120,7 +130,10 @@ def main(max_num_tokens: int = 30,
         p.start()
         ps.append(p)
         offset += num_rows
-    
+
+    #p = Process(target=uploader)
+    #ps.append(p)
+
     for p in ps:
         p.join()
     
