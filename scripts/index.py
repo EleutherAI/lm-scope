@@ -6,63 +6,120 @@ import torch
 import os
 from transformers import AutoTokenizer, GPTJForCausalLM
 from multiprocessing import Process, Queue
-from azure.storage.blob import BlockBlobService
 import time
-
 from collections import defaultdict
 import os
 import json
 from tqdm import tqdm
 import jsonlines
+import pickle
+import numpy as np
+from functools import cmp_to_key
 
 
-def iter_neuron_records():
-    with jsonlines.open(f'neurons.jsonl') as reader:
-        for obj in reader:
-            yield obj
+def get_range_of_file(fn):
+    # neuron<start>-<end>.pickle.<part>
+    a, b = list(map(int, fn[7:fn.find('.')].split('-')))
+    return a, b
 
-def iter_neurons():
-    for l in range(48):
-        for f in range(1600*4):
+
+def get_index_of_file(fn):
+    return int(fn.split('.')[-1])
+
+
+def get_raw_data_files_in_order(data_dir):
+    def _cmp_files(a, b):
+        if get_range_of_file(a)[0] < get_range_of_file(b)[0]:
+            return -1
+        elif get_range_of_file(a)[0] > get_range_of_file(b)[0]:
+            return 1
+        elif get_index_of_file(a) < get_index_of_file(b):
+            return -1
+        elif get_index_of_file(a) > get_index_of_file(b):
+            return 1
+        else:
+            return 0
+
+    fns = os.listdir(data_dir)
+    fns = sorted(fns, key=cmp_to_key(_cmp_files))
+    return fns
+
+
+def iter_neuron_records(with_pbar=True):
+    data_dir = 'data/raw'
+    for fn in tqdm(get_raw_data_files_in_order(data_dir)):
+        with open(os.path.join(data_dir, fn), 'rb') as f:
+            while True:
+                try:
+                    yield pickle.load(f)
+                except EOFError:
+                    break
+
+
+def iter_hidden_neurons():
+    for l in range(28):
+        for f in range(4096*4):
             yield l, f
 
 
-base_path = 'index'
+def round_all(v, decimals=2):
+    return [round(e, 2) for e in v]
 
-if not os.path.exists(base_path):
-    os.makedirs(base_path, exist_ok=True)
 
-num_examples = len(dataset)
+def round_all_2d(vv, decimals=2):
+    return [round_all(v, decimals=decimals) for v in vv]
 
-print(f'Generating example-level indices into the {base_path} folder...')
-neuron_records = iter_neuron_records()
-for idx in tqdm(range(num_examples)):
-    example = dataset[idx]
-    neuron_record = next(neuron_records)
-    with open(os.path.join(base_path, f'example-{idx:05}.json'), 'w') as f:
-        f.write(json.dumps({
-            'example': example,
-            'activations': neuron_record['activations'],
-            'logits': neuron_record['logits'],
-            'tokens': [enc.decode([t]) for t in enc.encode(example['text'])]
-        }))
 
-print(f'Generating neuron-level indices into the {base_path} folder...')
-neuron_to_example_indices = defaultdict(list)
-neuron_records = iter_neuron_records()
-for idx in tqdm(range(num_examples)):
-    example = dataset[idx]
-    neuron_record = next(neuron_records)
-    for record in neuron_record['activations']:
-        mx = max(record['a'])
-        if mx >= 2:
-            neuron_to_example_indices[(record['l'], record['f'])].append({ 'activations': record['a'], 'exampleIdx': idx })
+def main(index_path='index',
+         data_path='data/raw'):
 
-for k in neuron_to_example_indices.keys():
-    neuron_to_example_indices[k] = list(sorted(neuron_to_example_indices[k], key=lambda e: max(e['activations']), reverse=True))
+    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
 
-for (l, f) in iter_neurons():
-    if (l, f) in neuron_to_example_indices:
-        with open(os.path.join(base_path, f'neuron-{l}-{f}.json'), 'w') as file:
-            file.write(json.dumps(neuron_to_example_indices[(l, f)]))
+    if not os.path.exists(index_path):
+        os.makedirs(index_path, exist_ok=True)
+
+    print(f'Generating example-level indices into the {index_path} folder...')
+    for idx, record in enumerate(iter_neuron_records()):
+        with open(os.path.join(index_path, f'example-{idx:05}.json'), 'w') as f:
+            attn = np.array(record['attentions'])
+            # layer, batch, head, seq, seq
+            attentions = {}
+            for l in range(28):
+                for h in range(16):
+                    seq = attn.shape[-1]
+                    for s1 in range(seq):
+                        for s2 in range(seq):
+                            v = attn[l, 0, h, s1, s2]
+                            if v > 0.1:
+                                attentions[f'{l}:{h}:{s1}:{s2}'] = round(v, 2)
+            f.write(json.dumps({
+                'example': record['text'],
+                'hidden': [{'l': e['l'], 'f': e['f'], 'a': round_all(e['a'])} for e in record['hidden']],
+                'logits': record['logits'],
+                'tokens': [tokenizer.decode([t]) for t in tokenizer(record['text'])['input_ids']],
+                'attentions': attentions,
+            }))
+            break
+
+    print(f'Generating neuron-level indices into the {index_path} folder...')
+    neuron_to_example_indices = defaultdict(list)
+    for idx, record in enumerate(iter_neuron_records()):
+        for neuron in record['hidden']:
+            mx = max(neuron['a'])
+            if mx >= 2:
+                neuron_to_example_indices[(neuron['l'], neuron['f'])].append({ 'a': neuron['a'], 'exampleIdx': idx })
+        if idx > 100:
+            break
+
+    for k in neuron_to_example_indices.keys():
+        neuron_to_example_indices[k] = list(sorted(neuron_to_example_indices[k], key=lambda e: max(e['a']), reverse=True))
+
+    for (l, f) in iter_hidden_neurons():
+        if (l, f) in neuron_to_example_indices:
+            with open(os.path.join(index_path, f'neuron-{l}-{f}.json'), 'w') as file:
+                file.write(json.dumps(neuron_to_example_indices[(l, f)]))
+
+
+if __name__ == '__main__':
+    fire.Fire(main)
 
