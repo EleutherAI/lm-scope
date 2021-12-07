@@ -1,5 +1,6 @@
 from functools import lru_cache
 from collections import defaultdict
+from multiprocessing import Pool, Queue
 import time
 
 
@@ -36,3 +37,40 @@ def make_device_map(num_layers, num_devices):
         device_map[i] = list(range(c, c+l))
         c += l
     return device_map
+
+
+def round_all(v, decimals=2):
+    return [round(e, 2) for e in v]
+
+
+def round_all_2d(vv, decimals=2):
+    return [round_all(v, decimals=decimals) for v in vv]
+
+
+def pmap(f, gen, np):
+    def _worker_process(q, f):
+        while True:
+            args = q_in.get()
+            if args is None:
+                break
+            f(args)
+
+    q = Queue(maxsize=np)
+    p = Pool(np, initializer=_worker_process, initargs=(q, f))
+    for e in gen:
+        q.put(e)
+    for _ in range(np):
+        q.put(None)
+
+
+def iter_buckets(v, sz):
+    p = Pool(sz)
+    bucket = []
+    for e in v:
+        bucket.append(e)
+        if len(bucket) == sz:
+            yield bucket
+            bucket = []
+    if len(bucket) > 0:
+        yield bucket
+

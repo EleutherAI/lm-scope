@@ -17,6 +17,11 @@ import numpy as np
 from functools import cmp_to_key
 from multiprocessing import Pool, Queue
 
+from utils import pmap, round_all, round_all_2d, iter_buckets
+
+
+data_dir = 'data/raw'
+
 
 def get_range_of_file(fn):
     # neuron<start>-<end>.pickle.<part>
@@ -47,8 +52,7 @@ def get_raw_data_files_in_order(data_dir):
     return fns
 
 
-def iter_neuron_records(with_pbar=True):
-    data_dir = 'data/raw'
+def iter_neuron_records():
     for fn in tqdm(get_raw_data_files_in_order(data_dir)):
         with open(os.path.join(data_dir, fn), 'rb') as f:
             while True:
@@ -56,20 +60,13 @@ def iter_neuron_records(with_pbar=True):
                     yield pickle.load(f)
                 except EOFError:
                     break
+        break
 
 
 def iter_hidden_neurons():
     for l in range(28):
         for f in range(4096*4):
             yield l, f
-
-
-def round_all(v, decimals=2):
-    return [round(e, 2) for e in v]
-
-
-def round_all_2d(vv, decimals=2):
-    return [round_all(v, decimals=decimals) for v in vv]
 
 
 def generate_example_index(args):
@@ -89,19 +86,12 @@ def generate_example_index(args):
     with open(os.path.join(index_path, f'example-{idx:05}.json'), 'w') as f:
         f.write(json.dumps({
             'example': example['text'],
+            'source': example['source'],
             'hidden': [{'l': e['l'], 'f': e['f'], 'a': round_all(e['a'])} for e in example['hidden']],
             'logits': example['logits'],
             'tokens': [tokenizer.decode([t]) for t in tokenizer(example['text'])['input_ids']],
             'attentions': attentions,
         }))
-
-
-def process(q, f):
-    while True:
-        args = q.get()
-        if args is None:
-            break
-        f(args)
 
 
 def main(index_path='index',
@@ -114,14 +104,9 @@ def main(index_path='index',
         os.makedirs(index_path, exist_ok=True)
 
     print(f'Generating example-level indices into the {index_path} folder...')
-    q = Queue(maxsize=np)
-    p = Pool(np, initializer=process, initargs=(q, generate_example_index))
-    for idx, record in enumerate(iter_neuron_records()):
-        if idx > 100:
-            break
-        q.put((idx, record, index_path, tokenizer))
-    for _ in range(np):
-        q.put(None)
+    p = Pool(np)
+    for bucket in iter_buckets(enumerate(iter_neuron_records()), sz=np):
+        p.map(generate_example_index, [ (idx, record, index_path, tokenizer) for idx, record in bucket ])
 
     print(f'Generating neuron-level indices into the {index_path} folder...')
     neuron_to_example_indices = defaultdict(list)
@@ -129,15 +114,21 @@ def main(index_path='index',
         for neuron in record['hidden']:
             mx = max(neuron['a'])
             if mx >= 2:
-                neuron_to_example_indices[(neuron['l'], neuron['f'])].append({ 'a': neuron['a'], 'exampleIdx': idx })
+                neuron_to_example_indices[(neuron['l'], neuron['f'])].append({ 'a': round_all(neuron['a']), 'exampleIdx': idx })
 
     for k in tqdm(neuron_to_example_indices.keys()):
-        neuron_to_example_indices[k] = list(sorted(neuron_to_example_indices[k], key=lambda e: max(e['a']), reverse=True))
+        examples = list(sorted(neuron_to_example_indices[k], key=lambda e: max(e['a']), reverse=True))
+        neuron_to_example_indices[k] = {
+            'high': examples[:30],
+            'low': examples[-30:],
+        }
 
     for (l, f) in tqdm(list(iter_hidden_neurons())):
         if (l, f) in neuron_to_example_indices:
             with open(os.path.join(index_path, f'neuron-{l}-{f}.json'), 'w') as file:
                 file.write(json.dumps(neuron_to_example_indices[(l, f)]))
+
+    print('done')
 
 
 if __name__ == '__main__':
