@@ -118,10 +118,6 @@ class ModelWatcher:
         scores = self.hidden_states['attentions']
         return torch.stack([a.to(self.devices[0]) for a in scores]).tolist()
 
-    def _extract_neuron_desc(self):
-        # TODO
-        return None
-
     def forward(self, text):
         self._clear_hidden_states()
 

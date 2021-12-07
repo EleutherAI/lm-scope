@@ -74,3 +74,9 @@ def iter_buckets(v, sz):
     if len(bucket) > 0:
         yield bucket
 
+
+def iter_hidden_neurons():
+    for l in range(28):
+        for f in range(4096*4):
+            yield l, f
+

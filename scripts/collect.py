@@ -12,12 +12,12 @@ import time
 from dataset import CombinedDataset
 from watcher import ModelWatcher
 from pickler import BatchPickler
-from utils import make_device_map
+from utils import make_device_map, iter_hidden_neurons, cached_decode_tok
 
 
 def upload_file(local_fn):
     blob_service_client = BlockBlobService(account_name=os.environ['AZ_ACCOUNT_NAME'], account_key=os.environ['AZ_ACCOUNT_KEY'])
-    blob_path = 'raw/' + local_fn.split('/')[-1]
+    blob_path = 'raw2/' + local_fn.split('/')[-1]
     print('Uploading', local_fn, 'to blob path', blob_path)
     blob_service_client.create_blob_from_path(os.environ['AZ_CONTAINER_NAME'], blob_path, local_fn)
 
@@ -25,7 +25,7 @@ def upload_file(local_fn):
 def run_upload_test():
     with open('test.txt', 'w') as f:
         f.write('Hello, world!')
-    upload_file('test.txt')
+    upload_neuron_file('test.txt')
     print('upload test done')
 
 
@@ -37,7 +37,36 @@ def run_upload_test():
 #        time.sleep(5)
 
 
-def worker(max_num_tokens: int = 30,
+def get_knowledge_neuron_identifiers(model, device):
+    """
+    For every neuron in each hidden MLP block, this will activate the neuron,
+    pass it through the second MLP layer, then perform the logit lens trick on
+    the result.
+    """
+    mp = {}
+    for (l, f) in tqdm(iter_hidden_neurons()):
+        with torch.no_grad():
+            x = torch.zeros([1, 1, 4096*4], device=device)
+            x[0, 0, f] = 10
+            x = model.transformer.h[l].mlp.fc_out(x)
+            x = model.transformer.h[l].mlp.dropout(x)
+            x = model.lm_head(x)
+            values, indices = torch.topk(x, k=k)
+            norm_values = F.softmax(values, dim=-1)
+            top = []
+            for tok, prob in zip(indices[i], norm_values[i]):
+                tok = tok.item()
+                prob = prob.item()
+                top.append({
+                    'tok': cached_decode_tok(self.tokenizer, tok),
+                    'prob': round(prob, 4),
+                })
+            mp[f'{l}:{f}'] = top
+        return mp
+
+
+def worker(rank,
+           max_num_tokens: int = 30,
            top_k: int = 5,
            activation_threshold: int = 3,
            dataset_offset: int = 0,
@@ -74,6 +103,14 @@ def worker(max_num_tokens: int = 30,
 
     try:
         with torch.no_grad():
+
+            print('Collecting knowledge neuron identifiers')
+            identifiers = get_knowledge_neuron_identifiers(model, devices[0])
+            print('Saving identifiers')
+            with open('kn-id.pickle', 'wb') as f:
+                pickle.dump(identifiers, f)
+
+            print('Processing all examples..')
             for idx, row in enumerate(tqdm(dataset)):
 
                 if idx == dataset_limit:
@@ -117,6 +154,7 @@ def main(max_num_tokens: int = 2048,
     for proc, num_rows in enumerate(row_distribution):
         print('Starting process', proc)
         p = Process(target=worker, args=(
+            proc,
             max_num_tokens,
             top_k,
             activation_threshold,

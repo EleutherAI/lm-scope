@@ -17,7 +17,7 @@ import numpy as np
 from functools import cmp_to_key
 from multiprocessing import Pool, Queue
 
-from utils import pmap, round_all, round_all_2d, iter_buckets
+from utils import pmap, round_all, round_all_2d, iter_buckets, iter_hidden_neurons
 
 
 data_dir = 'data/raw'
@@ -61,12 +61,6 @@ def iter_neuron_records():
                 except EOFError:
                     break
         break
-
-
-def iter_hidden_neurons():
-    for l in range(28):
-        for f in range(4096*4):
-            yield l, f
 
 
 def generate_example_index(args):
