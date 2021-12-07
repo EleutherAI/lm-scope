@@ -3,11 +3,13 @@ from tqdm import tqdm
 from functools import partial
 import fire
 import torch
+import torch.nn.functional as F
 import os
 from transformers import AutoTokenizer, GPTJForCausalLM
 from multiprocessing import Process, Queue
 from azure.storage.blob import BlockBlobService
 import time
+import pickle
 
 from dataset import CombinedDataset
 from watcher import ModelWatcher
@@ -15,7 +17,7 @@ from pickler import BatchPickler
 from utils import make_device_map, iter_hidden_neurons, cached_decode_tok
 
 
-def upload_file(local_fn):
+def upload_neuron_file(local_fn):
     blob_service_client = BlockBlobService(account_name=os.environ['AZ_ACCOUNT_NAME'], account_key=os.environ['AZ_ACCOUNT_KEY'])
     blob_path = 'raw2/' + local_fn.split('/')[-1]
     print('Uploading', local_fn, 'to blob path', blob_path)
@@ -26,7 +28,8 @@ def run_upload_test():
     with open('test.txt', 'w') as f:
         f.write('Hello, world!')
     upload_neuron_file('test.txt')
-    print('upload test done')
+    os.remove('test.txt')
+    print('success')
 
 
 #def uploader():
@@ -37,32 +40,41 @@ def run_upload_test():
 #        time.sleep(5)
 
 
-def get_knowledge_neuron_identifiers(model, device):
+def get_knowledge_neuron_identifiers(model, device_map, top_k=5):
     """
     For every neuron in each hidden MLP block, this will activate the neuron,
     pass it through the second MLP layer, then perform the logit lens trick on
     the result.
     """
+
+    def _get_device(l):
+        for k, v in device_map.items():
+            if l in v:
+                return torch.device('cuda:' + str(k))
+        raise ValueError('Invalid layer idx' + str(l))
+
     mp = {}
-    for (l, f) in tqdm(iter_hidden_neurons()):
-        with torch.no_grad():
-            x = torch.zeros([1, 1, 4096*4], device=device)
+    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
+    with torch.no_grad():
+        for (l, f) in tqdm(list(iter_hidden_neurons())):
+            x = torch.zeros([1, 1, 4096*4], device=_get_device(l))
             x[0, 0, f] = 10
             x = model.transformer.h[l].mlp.fc_out(x)
             x = model.transformer.h[l].mlp.dropout(x)
-            x = model.lm_head(x)
-            values, indices = torch.topk(x, k=k)
+            x = x.to(torch.device('cuda:0'))
+            x = model.lm_head(x)[0]
+            values, indices = torch.topk(x, k=top_k)
             norm_values = F.softmax(values, dim=-1)
             top = []
-            for tok, prob in zip(indices[i], norm_values[i]):
+            for tok, prob in zip(indices[0], norm_values[0]):
                 tok = tok.item()
                 prob = prob.item()
                 top.append({
-                    'tok': cached_decode_tok(self.tokenizer, tok),
+                    'tok': cached_decode_tok(tokenizer, tok),
                     'prob': round(prob, 4),
                 })
             mp[f'{l}:{f}'] = top
-        return mp
+    return mp
 
 
 def worker(rank,
@@ -99,16 +111,19 @@ def worker(rank,
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     base_neuron_fn = os.path.join(output_dir, f"neurons{dataset_offset}-{dataset_offset+dataset_limit}.pickle")
-    pickler = BatchPickler(base_neuron_fn, file_size_goal, upload_file)
+    pickler = BatchPickler(base_neuron_fn, file_size_goal, upload_neuron_file)
 
     try:
         with torch.no_grad():
 
-            print('Collecting knowledge neuron identifiers')
-            identifiers = get_knowledge_neuron_identifiers(model, devices[0])
-            print('Saving identifiers')
-            with open('kn-id.pickle', 'wb') as f:
-                pickle.dump(identifiers, f)
+            if rank == 0:
+                print('Collecting knowledge neuron identifiers (only rank 0)')
+                identifiers = get_knowledge_neuron_identifiers(model, device_map)
+                print('Saving identifiers')
+                fn = os.path.join(output_dir, 'kn-id.pickle')
+                with open(fn, 'wb') as f:
+                    pickle.dump(identifiers, f)
+                upload_neuron_file(fn)
 
             print('Processing all examples..')
             for idx, row in enumerate(tqdm(dataset)):
@@ -174,6 +189,8 @@ def main(max_num_tokens: int = 2048,
 
     for p in ps:
         p.join()
+
+    print('done :)')
     
 
 if __name__ == '__main__':

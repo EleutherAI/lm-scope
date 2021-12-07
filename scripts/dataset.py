@@ -12,8 +12,8 @@ class CombinedDataset:
         self.data_dir = data_dir
         self.fns = [
             os.path.join(data_dir, 'UniversalDependencies-sentences.jsonl'),
-            os.path.join(data_dir, 'wikipedia-first-lines.jsonl'),
-            os.path.join(data_dir, 'wikipedia-random-sentences.jsonl'),
+            #os.path.join(data_dir, 'wikipedia-first-lines.jsonl'),
+            #os.path.join(data_dir, 'wikipedia-random-sentences.jsonl'),
         ]
 
         o = 0
@@ -29,6 +29,8 @@ class CombinedDataset:
                     if len(self) == limit:
                         break
                     self.examples.append(example)
+
+        print('Dataset has', len(self.examples), 'examples')
 
     def __len__(self):
         return len(self.examples)

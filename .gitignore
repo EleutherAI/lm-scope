@@ -7,3 +7,5 @@ __pycache__/
 data/
 index/
 index.zip
+test.txt
+output/
