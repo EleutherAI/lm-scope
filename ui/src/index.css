@@ -11,3 +11,44 @@ code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
         monospace;
 }
+
+.nav-bar {
+    background-color: black;
+    height: 40px;
+    line-height: 40px;
+}
+
+.nav-bar-logo {
+    font-size: 1.2em;
+    color: white;
+    text-decoration: none;
+    transition: opacity 0.2s;
+    margin-left: 10px;
+}
+
+.nav-bar-link {
+    color: white;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.nav-bar-link:hover {
+    opacity: 0.7;
+}
+
+.nav-bar-link-active {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+}
+
+.github-icon {
+    width: 35px;
+    transition: opacity 0.2s;
+    margin: 2.5px;
+    float: right;
+}
+
+.github-icon:hover {
+    opacity: 0.7;
+}
