@@ -20,7 +20,7 @@ from multiprocessing import Pool, Queue
 from utils import pmap, round_all, round_all_2d, iter_buckets, iter_hidden_neurons
 
 
-data_dir = 'data/raw'
+data_dir = 'data/raw2'
 
 
 def get_range_of_file(fn):
@@ -45,9 +45,9 @@ def get_raw_data_files_in_order(data_dir):
             return 1
         else:
             return 0
-    
+
     fns = os.listdir(data_dir)
-    fns = [fn for fn in fns if 'pickle' in fn]
+    fns = [fn for fn in fns if 'pickle' in fn and fn.split('/')[-1] != 'kn-id.pickle']
     fns = sorted(fns, key=cmp_to_key(_cmp_files))
     return fns
 
@@ -60,7 +60,6 @@ def iter_neuron_records():
                     yield pickle.load(f)
                 except EOFError:
                     break
-        break
 
 
 def generate_example_index(args):
@@ -110,17 +109,22 @@ def main(index_path='index',
             if mx >= 2:
                 neuron_to_example_indices[(neuron['l'], neuron['f'])].append({ 'a': round_all(neuron['a']), 'exampleIdx': idx })
 
-    for k in tqdm(neuron_to_example_indices.keys()):
-        examples = list(sorted(neuron_to_example_indices[k], key=lambda e: max(e['a']), reverse=True))
-        neuron_to_example_indices[k] = {
-            'high': examples[:30],
-            'low': examples[-30:],
-        }
+    with open(os.path.join(data_dir, 'kn-id.pickle'), 'rb') as f:
+        kn = pickle.load(f)
 
     for (l, f) in tqdm(list(iter_hidden_neurons())):
-        if (l, f) in neuron_to_example_indices:
-            with open(os.path.join(index_path, f'neuron-{l}-{f}.json'), 'w') as file:
-                file.write(json.dumps(neuron_to_example_indices[(l, f)]))
+        with open(os.path.join(index_path, f'neuron-{l}-{f}.json'), 'w') as file:
+            if (l, f) in neuron_to_example_indices:
+                k = (l, f)
+                examples = list(sorted(neuron_to_example_indices[k], key=lambda e: max(e['a']), reverse=True))
+            else:
+                examples = []
+            obj = {
+                'high': examples[:30],
+                'low': examples[-30:],
+                'kn': kn[f'{l}:{f}'],
+            }
+            file.write(json.dumps(obj))
 
     print('done')
 

@@ -1,3 +1,5 @@
+set -e
+
 zip -r index.zip ./index
 az storage blob upload \
     --file index.zip \
