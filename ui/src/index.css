@@ -12,10 +12,37 @@ code {
         monospace;
 }
 
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+#root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+p {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
 .nav-bar {
     background-color: black;
     height: 40px;
     line-height: 40px;
+}
+
+.below-nav-bar {
+    flex: 1;
 }
 
 .nav-bar-logo {

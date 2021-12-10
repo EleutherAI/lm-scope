@@ -3,9 +3,10 @@ import {
     BrowserRouter,
     Routes,
     Route,
-  } from "react-router-dom";
+} from "react-router-dom";
 import Home from './Home';
-  import Layout from "./Layout";
+import Layout from "./Layout";
+import Viewer from './Viewer';
 
 
 
@@ -16,7 +17,7 @@ function App() {
                 <Route
                     path={`${process.env.PUBLIC_URL}/viewer`}
                     element={<Layout>
-                        <div>viewer</div>
+                        <Viewer />
                     </Layout>}
                 />
                 <Route

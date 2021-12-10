@@ -31,6 +31,7 @@ function Layout({ children }: LayoutProps) {
                 <img
                     src={`${process.env.PUBLIC_URL}/github-icon-white.svg`}
                     className='github-icon'
+                    alt='GitHub'
                 />
             </a>
         </div>
