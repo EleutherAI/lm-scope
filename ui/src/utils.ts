@@ -9,6 +9,14 @@ export function usePrevious<T>(value: T) {
     return ref.current;
 }
 
+export function range(a: number, b: number) {
+    const arr = [];
+    for (let i = a; i < b; i++) {
+        arr.push(i);
+    }
+    return arr;
+}
+
 export function getBaseIndexPath(): string {
     if (process.env.NODE_ENV === 'development') {
         return 'http://localhost:3001/data/index';
@@ -28,20 +36,18 @@ export type Logit = {
     prob: number;
 }
 
-export type Example = {
+export type ExampleData = {
     example: string;
     tokens: string[];
     hidden: NeuronActivation[];
     logits: Logit[][][];  // [layer][seq][k]
-    attentions: Map<string, number>;
+    attentions: { [k: string]: number };
 }
 
-export type Neuron = {
+export type NeuronData = {
     high: {a: number[], exampleIdx: number},
     low: {a: number[], exampleIdx: number},
-    kn: {
-        [k: string]: Logit[]
-    }
+    kn: Logit[],
 }
 
 export type Prompt = {
@@ -53,14 +59,14 @@ export type Prompt = {
 
 export type Dataset = Prompt[];
 
-export async function getNeuronData(exampleIdx: number): Promise<Example> {
+export async function getDataForExample(exampleIdx: number): Promise<ExampleData> {
     const n = exampleIdx.toString().padStart(5, '0');
     const res = await fetch(`${getBaseIndexPath()}/example-${n}.json`);
     const j = await res.json();
     return j;
 }
 
-export async function getNeuronMatches(l: number, f: number): Promise<Neuron> {
+export async function getDataForNeuron(l: number, f: number): Promise<NeuronData> {
     const res = await fetch(`${getBaseIndexPath()}/neuron-${l}-${f}.json`);
     const j = await res.json();
     return j;

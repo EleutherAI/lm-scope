@@ -3,10 +3,14 @@ import {
     Dataset,
     filterResults,
     getDataset,
-    updateQueryParameter
+    updateQueryParameter,
+    getDataForExample,
+    ExampleData,
 } from './utils';
 import Split from 'react-split'
 import { debounce } from 'debounce';
+import LogitAttnView from "./LogitAttnView";
+import SearchPanel from "./SearchPanel";
 
 
 function Viewer() {
@@ -15,7 +19,11 @@ function Viewer() {
     const [results, setResults] = useState<number[]>([]);
     const [selectedExample, setSelectedExample] = useState<number>(-1);
     // const [selectedToken, setSelectedToken] = useState<number>(0);
-    const selectedToken = 0;
+    const [dataForExample, setDataForExample] = useState<ExampleData | null>(null);
+    const [headIdx, setHeadIdx] = useState<number>(0);
+    const [hoveringCell, setHoveringCell] = useState<{ layer: number, seq: number } | null>(null);
+    const [loading, setLoading] = useState(false);
+    const selectedToken = hoveringCell ? hoveringCell.seq : -1;
 
     const debouncedUpdateResults = useMemo(() => debounce(() => {
         if (dataset) {
@@ -27,15 +35,29 @@ function Viewer() {
 
     useEffect(() => {
         (async () => {
+            setLoading(true);
             const data = await getDataset('ud');
-            console.log(data);
             setDataset(data);
+            setLoading(false);
         })();
     }, []);
 
     useEffect(() => {
         debouncedUpdateResults();
     }, [debouncedUpdateResults]);
+
+    useEffect(() => {
+        (async () => {
+            if (selectedExample > -1 && dataset) {
+                setLoading(true);
+                const data = await getDataForExample(selectedExample);
+                setDataForExample(data);
+                setLoading(false);
+            } else {
+                setDataForExample(null);
+            }
+        })();
+    }, [selectedExample, dataset]);
 
     const onUpdateExample = (selectedExample: number) => {
         updateQueryParameter('example', selectedExample.toString());
@@ -54,11 +76,11 @@ function Viewer() {
     return <>
         <Split
             sizes={[25, 75]}
-            minSize={300}
+            minSize={100}
             expandToMin={true}
             gutterSize={5}
             gutterAlign="center"
-            snapOffset={30}
+            snapOffset={0}
             dragInterval={1}
             direction="horizontal"
             cursor="col-resize"
@@ -78,87 +100,25 @@ function Viewer() {
                 height: '100%',
             }}
         >
-            <div
-                style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                }}
-            >
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
-                >
-                    <input
-                        value={query}
-                        placeholder='Search for a prompt...'
-                        onChange={e => onUpdateQuery(e.target.value)}
-                        style={{
-                            flex: 1,
-                            padding: 5,
-                            margin: 5,
-                        }}
-                    />
-                </div>
-                <div
-                    style={{
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
-                >
-                    <p
-                        style={{ marginLeft: 5 }}
-                    >{results.length.toString()} results</p>
-                    <div
-                        style={{
-                            flex: 1,
-                            position: 'relative',
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                overflow: 'scroll',
-                                position: 'absolute',
-                            }}
-                        >
-                            {results.slice(0, 50).map(res => {
-                                return <div
-                                    key={res}
-                                    style={{
-                                        margin: '5px',
-                                        padding: '5px',
-                                        border: '1px solid #eee',
-                                        borderRadius: '4px',
-                                        backgroundColor: selectedExample === res ? 'lightblue' : undefined,
-                                        cursor: 'pointer',
-                                    }}
-                                    onClick={() => onUpdateExample(res)}
-                                >
-                                    {dataset && dataset[res].tokens.map((token, tokenIdx) => {
-                                        return <span
-                                            key={tokenIdx}
-                                            style={{
-                                                textDecoration: selectedToken === tokenIdx ? 'underline' : undefined,
-                                                fontStyle: selectedToken === tokenIdx ? 'italic' : undefined,
-                                            }}
-                                        >
-                                            {token}
-                                        </span>;
-                                    })}
-                                </div>;
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div>
-                right panel
-            </div>
+            <SearchPanel
+                dataset={dataset}
+                query={query}
+                results={results}
+                selectedExample={selectedExample}
+                selectedToken={selectedToken}
+                onUpdateQuery={onUpdateQuery}
+                onUpdateExample={onUpdateExample}
+            />
+            <LogitAttnView
+                dataset={dataset}
+                exampleIdx={selectedExample}
+                dataForExample={dataForExample}
+                loading={loading}
+                headIdx={headIdx}
+                hoveringCell={hoveringCell}
+                updateHeadIdx={setHeadIdx}
+                updateHoveringCell={setHoveringCell}
+            />
         </Split>
     </>;
 }
