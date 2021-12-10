@@ -34,6 +34,21 @@ function Viewer() {
     }, 200), [dataset, query]);
 
     useEffect(() => {
+        const query = new URLSearchParams(window.location.search).get('query');
+        if (query) {
+            setQuery(query);
+        }
+
+        const example = new URLSearchParams(window.location.search).get('example');
+        if (example) {
+            const i = parseInt(example);
+            if (!isNaN(i)) {
+                setSelectedExample(i);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
         (async () => {
             setLoading(true);
             const data = await getDataset('ud');
