@@ -106,3 +106,7 @@ export function filterResults(dataset: Dataset, query: string): number[] {
         .map(([d, idx]) => idx);
     return results;
 }
+
+export function rgba(r: number, g: number, b: number, a: number): string {
+    return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
+}

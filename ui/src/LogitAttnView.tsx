@@ -3,8 +3,28 @@ import {
     Dataset,
     ExampleData,
     range,
+    rgba,
 } from "./utils";
 
+
+const COLORS = [
+    [255, 17, 0],
+    [255, 149, 0],
+    [255, 238, 0],
+    [77, 255, 0],
+    [0, 255, 242],
+    [0, 255, 98],
+    [0, 153, 255],
+    [0, 34, 255],
+    [128, 0, 255],
+    [221, 0, 255],
+    [255, 0, 170],
+    [128, 128, 128],
+    [166, 102, 0],
+    [173, 0, 0],
+    [128, 128, 0],
+    [174, 255, 0],
+];
 
 interface LogitAttnViewProps {
     dataset: Dataset | null;
@@ -27,6 +47,20 @@ export default function LogitAttnView({
     hoveringCell,
     updateHoveringCell,
 }: LogitAttnViewProps) {
+
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft') {
+                updateHeadIdx(Math.max(0, headIdx - 1));
+            } else if (e.key === 'ArrowRight') {
+                updateHeadIdx(Math.min(15, headIdx + 1));
+            }
+        }
+        window.addEventListener('keydown', onKeyDown);
+        return () => {
+            window.removeEventListener('keydown', onKeyDown);
+        }
+    }, [headIdx, updateHeadIdx]);
 
     if (loading || !dataset) {
         return <div>Loading...</div>
@@ -123,26 +157,25 @@ export default function LogitAttnView({
             position: 'relative',
         }}
     >
-        <div
-            style={{
-            }}
-        >
-            <input
-                type='range'
-                min={0}
-                max={15}
-                value={headIdx}
-                onChange={(e) => {
-                    const newIdx = parseInt(e.target.value);
-                    updateHeadIdx(newIdx);
-                }}
+        <div>
+            <span
                 style={{
-                    width: '200px',
+                    padding: '4px',
+                    marginLeft: '4px',
                 }}
-            />
-            <span style={{ fontSize: '0.9em', top: -2, position: 'relative', paddingLeft: 5 }}>
-                head {headIdx}
-            </span>
+            >attention head:</span>
+            {COLORS.map(([R, G, B], headIdxOfButton) => {
+                return <button
+                    key={headIdxOfButton}
+                    className='head-index-button'
+                    style={{
+                        backgroundColor: rgba(R, G, B, headIdx === headIdxOfButton ? 1 : 0.1),
+                    }}
+                    onClick={() => {
+                        updateHeadIdx(headIdxOfButton);
+                    }}
+                >{headIdxOfButton}</button>;
+            })}
             {renderInputTokenRow()}
         </div>
         <div style={{
@@ -211,35 +244,45 @@ const redraw = (params: {
     seqLen: number,
     hoveringCell: { layer: number, seq: number } | null,
 }) => {
+    const hideFirstAttn = true;
     const ctx = params.canvas.getContext('2d');
     if (ctx) {
         const width = params.canvas.width;
         const height = params.canvas.height;
         const tokenWidth = width / params.seqLen;
         ctx.clearRect(0, 0, width, height);
-        for (const tok1Idx of range(0, params.seqLen)) {
-            // don't draw attention for first token (noisy)
-            for (const tok2Idx of range(1, params.seqLen)) {
-                const draw = () => {
-                    const key = `${params.layerIdx}:${params.headIdx}:${tok1Idx}:${tok2Idx}`;
+        // if we're hovering over a cell
+        if (params.hoveringCell && params.hoveringCell.layer === params.layerIdx - 1) {
+            // draw all attentions that point to this token (from all heads, ignoring the given headIdx)
+            for (const headIdx2 of range(0, 16)) {
+                for (const tokIdxOther of range(hideFirstAttn ? 1 : 0, params.hoveringCell.seq + 1)) {
+                    const key: string = `${params.layerIdx}:${headIdx2}:${params.hoveringCell.seq}:${tokIdxOther}`;
                     if (key in params.attentions) {
                         const value = params.attentions[key];
                         ctx.lineWidth = value * 5;
-                        ctx.strokeStyle = `rgba(52, 183, 235, ${value})`;
-                        const a = Math.min(tok1Idx, tok2Idx) * tokenWidth + tokenWidth / 2;
-                        const b = Math.max(tok1Idx, tok2Idx) * tokenWidth + tokenWidth / 2;
+                        const [R, G, B] = COLORS[headIdx2];
+                        ctx.strokeStyle = rgba(R, G, B, value);
+                        const a = Math.min(params.hoveringCell.seq, tokIdxOther) * tokenWidth + tokenWidth / 2;
+                        const b = Math.max(params.hoveringCell.seq, tokIdxOther) * tokenWidth + tokenWidth / 2;
                         drawArcBetweenPoints(ctx, a, b);
                     }
-                };
-                if (params.hoveringCell && params.hoveringCell.layer === params.layerIdx - 1) {
-                    // draw just the attention for the cell we're hovering over
-                    const hovering = params.hoveringCell.seq === tok1Idx || params.hoveringCell.seq === tok2Idx;
-                    if (hovering) {
-                        draw();
+                }
+            }
+        } else {
+            // draw all attentions between all tokens
+            for (const tokIdx1 of range(0, params.seqLen)) {
+                for (const tokIdx2 of range(hideFirstAttn ? 1 : 0, tokIdx1 + 1)) {
+                    const key = `${params.layerIdx}:${params.headIdx}:${tokIdx1}:${tokIdx2}`;
+                    if (key in params.attentions) {
+                        const key2 = `${params.layerIdx}:${params.headIdx}:${tokIdx2}:${tokIdx1}`;
+                        const value = params.attentions[key];
+                        ctx.lineWidth = value * 5;
+                        const [R, G, B] = COLORS[params.headIdx];
+                        ctx.strokeStyle = rgba(R, G, B, value);
+                        const a = Math.min(tokIdx1, tokIdx2) * tokenWidth + tokenWidth / 2;
+                        const b = Math.max(tokIdx1, tokIdx2) * tokenWidth + tokenWidth / 2;
+                        drawArcBetweenPoints(ctx, a, b);
                     }
-                } else {
-                    // draw everything
-                    draw();
                 }
             }
         }

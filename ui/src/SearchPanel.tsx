@@ -83,11 +83,11 @@ export default function SearchPanel({
                             onClick={() => onUpdateExample(res)}
                         >
                             {dataset && dataset[res].tokens.map((token, tokenIdx) => {
+                                const selected = selectedToken === tokenIdx && selectedExample === res;
                                 return <span
                                     key={tokenIdx}
                                     style={{
-                                        textDecoration: selectedToken === tokenIdx ? 'underline' : undefined,
-                                        fontStyle: selectedToken === tokenIdx ? 'italic' : undefined,
+                                        textDecoration: selected ? 'underline' : undefined,
                                     }}
                                 >
                                     {token}
