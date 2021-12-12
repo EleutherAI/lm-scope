@@ -23,6 +23,7 @@ function Viewer() {
     const [headIdx, setHeadIdx] = useState<number>(0);
     const [hoveringCell, setHoveringCell] = useState<{ layer: number, seq: number } | null>(null);
     const [loading, setLoading] = useState(false);
+    const [hideFirstAttn, setHideFirstAttn] = useState(true);
     const selectedToken = hoveringCell ? hoveringCell.seq : -1;
 
     const debouncedUpdateResults = useMemo(() => debounce(() => {
@@ -133,6 +134,8 @@ function Viewer() {
                 hoveringCell={hoveringCell}
                 updateHeadIdx={setHeadIdx}
                 updateHoveringCell={setHoveringCell}
+                hideFirstAttn={hideFirstAttn}
+                updateHideFirstAttn={setHideFirstAttn}
             />
         </Split>
     </>;

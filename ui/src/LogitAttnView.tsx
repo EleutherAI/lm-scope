@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import ReactTooltip from "react-tooltip";
 import {
     Dataset,
     ExampleData,
@@ -35,6 +36,8 @@ interface LogitAttnViewProps {
     updateHeadIdx: (idx: number) => void;
     hoveringCell: { layer: number, seq: number } | null;
     updateHoveringCell: (cell: { layer: number, seq: number } | null) => void;
+    hideFirstAttn: boolean;
+    updateHideFirstAttn: (hide: boolean) => void;
 }
 
 export default function LogitAttnView({
@@ -46,6 +49,8 @@ export default function LogitAttnView({
     updateHeadIdx,
     hoveringCell,
     updateHoveringCell,
+    hideFirstAttn,
+    updateHideFirstAttn,
 }: LogitAttnViewProps) {
 
     useEffect(() => {
@@ -122,12 +127,20 @@ export default function LogitAttnView({
                 flexDirection: 'row',
             }}
         >
+            <ReactTooltip
+                id='logit-tooltip'
+                place='top'
+                multiline={true}
+            />
             {example.tokens.map((tok, seqIdx) => {
                 const topLogits = dataForExample.logits[layerIdx][seqIdx];
                 const prevTopLogits = layerIdx > 0 ? dataForExample.logits[layerIdx - 1][seqIdx] : null;
                 const changed = topLogits && prevTopLogits && prevTopLogits[0].tok !== topLogits[0].tok;
                 const correct = topLogits && seqIdx - 1 < example.tokens.length && example.tokens[seqIdx + 1] === topLogits[0].tok;
                 const hovering = hoveringCell && hoveringCell.layer === layerIdx && hoveringCell.seq === seqIdx;
+                const tooltipText = topLogits ?
+                    topLogits.map(l => `${l.tok.replace(' ', '␣')} ${Math.round(l.prob * 100)}%`).join('<br />')
+                    : '';
                 return <div
                     key={seqIdx}
                     style={{
@@ -144,7 +157,9 @@ export default function LogitAttnView({
                     onMouseEnter={() => updateHoveringCell({ layer: layerIdx, seq: seqIdx })}
                     onMouseLeave={() => updateHoveringCell(null)}
                 >
-                    {topLogits ? topLogits[0].tok : ''}
+                    <div className='logit' data-for='logit-tooltip' data-tip={tooltipText}>
+                        {topLogits ? topLogits[0].tok.replace(' ', '␣') : ''}
+                    </div>
                 </div>;
             })}
         </div>
@@ -176,6 +191,20 @@ export default function LogitAttnView({
                     }}
                 >{headIdxOfButton}</button>;
             })}
+            <span
+                style={{
+                    marginLeft: '10px',
+                }}
+            >
+                hide attentions w/ first token?
+                <input
+                    type='checkbox'
+                    checked={hideFirstAttn}
+                    onChange={(e) => {
+                        updateHideFirstAttn(e.target.checked);
+                    }}
+                />
+            </span>
             {renderInputTokenRow()}
         </div>
         <div style={{
@@ -208,6 +237,7 @@ export default function LogitAttnView({
                             layerIdx={layerIdx}
                             headIdx={headIdx}
                             hoveringCell={hoveringCell}
+                            hideFirstAttn={hideFirstAttn}
                         />
                         {renderTokenRow(layerIdx)}
                     </div>;
@@ -243,8 +273,8 @@ const redraw = (params: {
     headIdx: number,
     seqLen: number,
     hoveringCell: { layer: number, seq: number } | null,
+    hideFirstAttn: boolean,
 }) => {
-    const hideFirstAttn = true;
     const ctx = params.canvas.getContext('2d');
     if (ctx) {
         const width = params.canvas.width;
@@ -255,7 +285,7 @@ const redraw = (params: {
         if (params.hoveringCell && params.hoveringCell.layer === params.layerIdx - 1) {
             // draw all attentions that point to this token (from all heads, ignoring the given headIdx)
             for (const headIdx2 of range(0, 16)) {
-                for (const tokIdxOther of range(hideFirstAttn ? 1 : 0, params.hoveringCell.seq + 1)) {
+                for (const tokIdxOther of range(params.hideFirstAttn ? 1 : 0, params.hoveringCell.seq + 1)) {
                     const key: string = `${params.layerIdx}:${headIdx2}:${params.hoveringCell.seq}:${tokIdxOther}`;
                     if (key in params.attentions) {
                         const value = params.attentions[key];
@@ -271,10 +301,9 @@ const redraw = (params: {
         } else {
             // draw all attentions between all tokens
             for (const tokIdx1 of range(0, params.seqLen)) {
-                for (const tokIdx2 of range(hideFirstAttn ? 1 : 0, tokIdx1 + 1)) {
+                for (const tokIdx2 of range(params.hideFirstAttn ? 1 : 0, tokIdx1 + 1)) {
                     const key = `${params.layerIdx}:${params.headIdx}:${tokIdx1}:${tokIdx2}`;
                     if (key in params.attentions) {
-                        const key2 = `${params.layerIdx}:${params.headIdx}:${tokIdx2}:${tokIdx1}`;
                         const value = params.attentions[key];
                         ctx.lineWidth = value * 5;
                         const [R, G, B] = COLORS[params.headIdx];
@@ -296,6 +325,7 @@ interface AttnProps {
     headIdx: number;
     seqLen: number;
     hoveringCell: { layer: number, seq: number } | null;
+    hideFirstAttn: boolean;
 }
 
 function Attn({
@@ -304,6 +334,7 @@ function Attn({
     headIdx,
     seqLen,
     hoveringCell,
+    hideFirstAttn,
 }: AttnProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -316,9 +347,10 @@ function Attn({
                 headIdx,
                 seqLen,
                 hoveringCell,
+                hideFirstAttn,
             });
         }
-    }, [canvasRef, attentions, layerIdx, headIdx, seqLen, hoveringCell]);
+    }, [canvasRef, attentions, layerIdx, headIdx, seqLen, hoveringCell, hideFirstAttn]);
 
     return <div>
         <canvas
