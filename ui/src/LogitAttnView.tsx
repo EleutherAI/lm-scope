@@ -256,8 +256,15 @@ function drawArcBetweenPoints(ctx: CanvasRenderingContext2D, a: number, b: numbe
         ctx.stroke();
     } else {
         ctx.beginPath();
-        const radius = (b - a) * 0.75;
-        const heightUpperBound = 50;
+        let radius: number;
+        let heightUpperBound: number;
+        if (b - a > 50) {
+            radius = (b - a) * 0.75;
+            heightUpperBound = 50;
+        } else {
+            radius = (b - a) * 0.75;
+            heightUpperBound = 15;
+        }
         ctx.moveTo(a, 0);
         ctx.arcTo((a + b) / 2, heightUpperBound, b, 0, radius);
         ctx.lineTo(b, 0);
