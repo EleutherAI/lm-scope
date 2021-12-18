@@ -176,9 +176,9 @@ export default function LogitAttnView({
     };
 
     let layersShown;
-    if (selectedLayer == -1) {
+    if (selectedLayer === -1) {
         layersShown = range(0, layerCount).map((v) => { return {idx: v, showAttn: true} });
-    } else if (selectedLayer == 0) {
+    } else if (selectedLayer === 0) {
         layersShown = [
             { idx: 0, showAttn: true },
         ];
@@ -220,20 +220,6 @@ export default function LogitAttnView({
                     marginLeft: '10px',
                 }}
             >
-                hide parked attentions?
-                <input
-                    type='checkbox'
-                    checked={hideParkedAttn}
-                    onChange={(e) => {
-                        updateHideParkedAttn(e.target.checked);
-                    }}
-                />
-            </span>
-            <span
-                style={{
-                    marginLeft: '10px',
-                }}
-            >
                 layer(s)
                 <LayerSelector
                     layerCount={layerCount}
@@ -243,7 +229,21 @@ export default function LogitAttnView({
                     }}
                 />
             </span>
-            {renderInputTokenRow()}
+            <span
+                style={{
+                    marginLeft: '10px',
+                }}
+            >
+                hide parked attentions?
+                <input
+                    type='checkbox'
+                    checked={hideParkedAttn}
+                    onChange={(e) => {
+                        updateHideParkedAttn(e.target.checked);
+                    }}
+                />
+            </span>
+           {renderInputTokenRow()}
         </div>
         <div style={{
             flex: 1,
@@ -406,7 +406,7 @@ function Attn({
                 hideParkedAttn,
             });
         }
-    }, [canvasRef, attentions, layerIdx, headIdx, seqLen, hoveringCell, hideParkedAttn]);
+    }, [canvasRef, attentions, layerIdx, headIdx, seqLen, hoveringCell, showAttn, hideParkedAttn]);
 
     return <div>
         <canvas
