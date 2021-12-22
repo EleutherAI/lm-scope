@@ -2,4 +2,4 @@ transformers
 datasets
 fire
 jsonlines
-azure-storage
+azure-storage-blob

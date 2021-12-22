@@ -20,6 +20,7 @@ from multiprocessing import Pool, Queue
 from utils import pmap, round_all, round_all_2d, iter_buckets, iter_hidden_neurons
 
 
+# TODO: update this to use the new format
 data_dir = 'data/raw2'
 
 

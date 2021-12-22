@@ -12,7 +12,7 @@ class BatchPickler:
     file = None
     cur_file_name = None
 
-    def __init__(self, file_name_base, file_bytes_goal, save_file_func):
+    def __init__(self, file_name_base, file_bytes_goal, save_file_func=None):
         self.file_name_base = file_name_base
         self.file_bytes_goal = file_bytes_goal
         self.save_file_func = save_file_func
@@ -38,10 +38,12 @@ class BatchPickler:
             self.file = None
 
             # compress and upload the file
-            self.save_file_func(self.cur_file_name)
+            if self.save_file_func is not None:
+                self.save_file_func(self.cur_file_name)
 
             # remove the file
-            os.remove(self.cur_file_name)
+            if self.cur_file_name and os.path.exists(self.cur_file_name):
+                os.remove(self.cur_file_name)
 
             # mark the batch as finished
             self.cur_file_name = None
