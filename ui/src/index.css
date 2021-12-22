@@ -1,3 +1,9 @@
+:root {
+    --gap:clamp(1em,calc(100vw / 4 - 176px),24px);
+    --primary: rgba(0, 0, 0, 0.88);
+    --secondary: rgba(0, 0, 0, 0.56);
+}
+
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -35,10 +41,16 @@ p {
     flex-direction: column;
 }
 
+.header {
+    background-color: black;
+}
+
 .nav-bar {
     background-color: black;
+    max-width: 1024px;
     height: 40px;
     line-height: 40px;
+    margin: auto;
 }
 
 .below-nav-bar {
@@ -69,11 +81,43 @@ p {
     text-underline-offset: 2px;
 }
 
+.first-entry {
+    margin: var(--gap)0 calc(var(--gap) * 2);
+    min-height: 140px;
+}
+
+article.first-entry.home-info>header>h1 {
+    font-size: 200%;
+}
+
+.main-page {
+    max-width: 800px;
+    margin: auto;
+    padding: var(--gap)0;
+}
+
 .github-icon {
     width: 35px;
     transition: opacity 0.2s;
     margin: 2.5px;
     float: right;
+}
+
+.social-icons {
+    padding: 12px 0;
+}
+
+.social-icons a svg {
+    height: 26px;
+    width: 26px;
+}
+
+.social-icons a {
+    color: var(--primary);
+}
+
+.social-icons a:not(:last-of-type) {
+    margin-inline-end: 12px;
 }
 
 .github-icon:hover {
@@ -97,4 +141,17 @@ p {
 
 .head-index-button:hover {
     opacity: 0.5;
+}
+
+.entry-content {
+    margin: 8px 0;
+    color: var(--secondary);
+}
+
+ul span.list-header {
+    font-weight: bold;
+}
+
+ul.list-with-headers li {
+    margin-bottom: 10px;
 }
