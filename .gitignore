@@ -10,3 +10,4 @@ index.zip
 test.txt
 output/
 checkpoints/
+lm_cache/

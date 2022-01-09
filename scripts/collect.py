@@ -126,13 +126,12 @@ def worker(args: WorkerArgs):
                 _print_with_rank('Skipping identifiers')
 
             _print_with_rank('Processing all examples..')
-            for idx, row in enumerate(tqdm(dataset)):
+            for idx, example in enumerate(tqdm(dataset)):
 
-                text = row['text']
-                source = row['source']
+                text = example['prompt'] + example['target']
 
                 record = watcher.forward(text)
-                record['source'] = source
+                record['source'] = example['source']
 
                 watcher.timer.start('pickle')
                 pickler.dump(record)
