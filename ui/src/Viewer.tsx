@@ -23,7 +23,8 @@ function Viewer() {
     const [headIdx, setHeadIdx] = useState<number>(0);
     const [hoveringCell, setHoveringCell] = useState<{ layer: number, seq: number } | null>(null);
     const [loading, setLoading] = useState(false);
-    const [hideFirstAttn, setHideFirstAttn] = useState(true);
+    const [hideParkedAttn, setHideParkedAttn] = useState(true);
+    const [selectedLayer, setSelectedLayer] = useState<number>(-1);
     const selectedToken = hoveringCell ? hoveringCell.seq : -1;
 
     const debouncedUpdateResults = useMemo(() => debounce(() => {
@@ -47,6 +48,15 @@ function Viewer() {
                 setSelectedExample(i);
             }
         }
+
+        const layer = new URLSearchParams(window.location.search).get('layer') || "-1";
+	setSelectedLayer(parseInt(layer));
+
+        const attention = new URLSearchParams(window.location.search).get('attention') || "0";
+	setHeadIdx(parseInt(attention));
+
+        const hideParkedAttn = (new URLSearchParams(window.location.search).get('hide-parked')) !== "false";
+        setHideParkedAttn(hideParkedAttn);
     }, []);
 
     useEffect(() => {
@@ -88,6 +98,33 @@ function Viewer() {
         }
         setQuery(query);
     };
+
+    const onUpdateLayer = (layer: number) => {
+        if (layer === -1) {
+            updateQueryParameter('layer', null);
+        } else {
+            updateQueryParameter('layer', layer.toString());
+        }
+        setSelectedLayer(layer);
+    }
+
+    const onUpdateHeadIdx = (headIdx: number) => {
+        if (headIdx === 0) {
+            updateQueryParameter('attention', null);
+        } else {
+            updateQueryParameter('attention', headIdx.toString());
+        }
+        setHeadIdx(headIdx);
+    }
+
+    const onUpdateHideParkedAttn = (hideParkedAttn: boolean) => {
+        if (!hideParkedAttn) {
+            updateQueryParameter('hide-parked', "false");
+        } else {
+            updateQueryParameter('hide-parked', null);
+        }
+        setHideParkedAttn(hideParkedAttn);
+    }
 
     return <>
         <Split
@@ -132,10 +169,12 @@ function Viewer() {
                 loading={loading}
                 headIdx={headIdx}
                 hoveringCell={hoveringCell}
-                updateHeadIdx={setHeadIdx}
+                updateHeadIdx={onUpdateHeadIdx}
                 updateHoveringCell={setHoveringCell}
-                hideFirstAttn={hideFirstAttn}
-                updateHideFirstAttn={setHideFirstAttn}
+                hideParkedAttn={hideParkedAttn}
+                updateHideParkedAttn={onUpdateHideParkedAttn}
+                selectedLayer={selectedLayer}
+                updateSelectedLayer={onUpdateLayer}
             />
         </Split>
     </>;

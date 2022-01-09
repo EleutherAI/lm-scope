@@ -7,6 +7,7 @@ import {
     rgba,
 } from "./utils";
 
+import LayerSelector from "./LayerSelector";
 
 const COLORS = [
     [255, 17, 0],
@@ -27,6 +28,11 @@ const COLORS = [
     [174, 255, 0],
 ];
 
+const layerCount = 28
+
+// Layers with index >= parkAttnStart exhibit the head parking behavior
+const parkAttnStart = 3
+
 interface LogitAttnViewProps {
     dataset: Dataset | null;
     exampleIdx: number;
@@ -36,8 +42,10 @@ interface LogitAttnViewProps {
     updateHeadIdx: (idx: number) => void;
     hoveringCell: { layer: number, seq: number } | null;
     updateHoveringCell: (cell: { layer: number, seq: number } | null) => void;
-    hideFirstAttn: boolean;
-    updateHideFirstAttn: (hide: boolean) => void;
+    hideParkedAttn: boolean;
+    updateHideParkedAttn: (hide: boolean) => void;
+    selectedLayer: number;
+    updateSelectedLayer: (layer: number) => void;
 }
 
 export default function LogitAttnView({
@@ -49,8 +57,10 @@ export default function LogitAttnView({
     updateHeadIdx,
     hoveringCell,
     updateHoveringCell,
-    hideFirstAttn,
-    updateHideFirstAttn,
+    hideParkedAttn,
+    updateHideParkedAttn,
+    selectedLayer,
+    updateSelectedLayer,
 }: LogitAttnViewProps) {
 
     useEffect(() => {
@@ -165,6 +175,20 @@ export default function LogitAttnView({
         </div>
     };
 
+    let layersShown;
+    if (selectedLayer === -1) {
+        layersShown = range(0, layerCount).map((v) => { return {idx: v, showAttn: true} });
+    } else if (selectedLayer === 0) {
+        layersShown = [
+            { idx: 0, showAttn: true },
+        ];
+    } else {
+        layersShown = [
+            { idx: selectedLayer - 1, showAttn: false },
+            { idx: selectedLayer, showAttn: true },
+        ];
+    }
+
     return <div
         style={{
             display: 'flex',
@@ -196,16 +220,30 @@ export default function LogitAttnView({
                     marginLeft: '10px',
                 }}
             >
-                hide attentions w/ first token?
-                <input
-                    type='checkbox'
-                    checked={hideFirstAttn}
-                    onChange={(e) => {
-                        updateHideFirstAttn(e.target.checked);
+                layer(s)
+                <LayerSelector
+                    layerCount={layerCount}
+                    selectedLayer={selectedLayer}
+                    updateSelectedLayer={(layerIdx) => {
+                        updateSelectedLayer(layerIdx);
                     }}
                 />
             </span>
-            {renderInputTokenRow()}
+            <span
+                style={{
+                    marginLeft: '10px',
+                }}
+            >
+                hide parked attentions?
+                <input
+                    type='checkbox'
+                    checked={hideParkedAttn}
+                    onChange={(e) => {
+                        updateHideParkedAttn(e.target.checked);
+                    }}
+                />
+            </span>
+           {renderInputTokenRow()}
         </div>
         <div style={{
             flex: 1,
@@ -221,9 +259,9 @@ export default function LogitAttnView({
                     position: 'absolute',
                 }}
             >
-                {range(0, 28).map(layerIdx => {
+                {layersShown.map(layer => {
                     return <div
-                        key={layerIdx}
+                        key={layer.idx}
                         style={{
                             // border: "1px solid #eee",
                             // margin: '6px',
@@ -234,12 +272,13 @@ export default function LogitAttnView({
                         <Attn
                             attentions={dataForExample.attentions}
                             seqLen={example.tokens.length}
-                            layerIdx={layerIdx}
+                            layerIdx={layer.idx}
                             headIdx={headIdx}
                             hoveringCell={hoveringCell}
-                            hideFirstAttn={hideFirstAttn}
+                            showAttn={layer.showAttn}
+                            hideParkedAttn={hideParkedAttn}
                         />
-                        {renderTokenRow(layerIdx)}
+                        {renderTokenRow(layer.idx)}
                     </div>;
                 })}
             </div>
@@ -280,19 +319,26 @@ const redraw = (params: {
     headIdx: number,
     seqLen: number,
     hoveringCell: { layer: number, seq: number } | null,
-    hideFirstAttn: boolean,
+    showAttn: boolean,
+    hideParkedAttn: boolean,
 }) => {
     const ctx = params.canvas.getContext('2d');
     if (ctx) {
         const width = params.canvas.width;
         const height = params.canvas.height;
         const tokenWidth = width / params.seqLen;
+        const firstAttn = params.hideParkedAttn && params.layerIdx >= parkAttnStart ? 1 : 0;
         ctx.clearRect(0, 0, width, height);
+
+        if (!params.showAttn) {
+            return;
+        }
+
         // if we're hovering over a cell
         if (params.hoveringCell && params.hoveringCell.layer === params.layerIdx - 1) {
             // draw all attentions that point to this token (from all heads, ignoring the given headIdx)
             for (const headIdx2 of range(0, 16)) {
-                for (const tokIdxOther of range(params.hideFirstAttn ? 1 : 0, params.hoveringCell.seq + 1)) {
+                for (const tokIdxOther of range(firstAttn, params.hoveringCell.seq + 1)) {
                     const key: string = `${params.layerIdx}:${headIdx2}:${params.hoveringCell.seq}:${tokIdxOther}`;
                     if (key in params.attentions) {
                         const value = params.attentions[key];
@@ -308,7 +354,7 @@ const redraw = (params: {
         } else {
             // draw all attentions between all tokens
             for (const tokIdx1 of range(0, params.seqLen)) {
-                for (const tokIdx2 of range(params.hideFirstAttn ? 1 : 0, tokIdx1 + 1)) {
+                for (const tokIdx2 of range(firstAttn, tokIdx1 + 1)) {
                     const key = `${params.layerIdx}:${params.headIdx}:${tokIdx1}:${tokIdx2}`;
                     if (key in params.attentions) {
                         const value = params.attentions[key];
@@ -332,7 +378,8 @@ interface AttnProps {
     headIdx: number;
     seqLen: number;
     hoveringCell: { layer: number, seq: number } | null;
-    hideFirstAttn: boolean;
+    showAttn: boolean;
+    hideParkedAttn: boolean;
 }
 
 function Attn({
@@ -341,7 +388,8 @@ function Attn({
     headIdx,
     seqLen,
     hoveringCell,
-    hideFirstAttn,
+    showAttn,
+    hideParkedAttn,
 }: AttnProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -354,10 +402,11 @@ function Attn({
                 headIdx,
                 seqLen,
                 hoveringCell,
-                hideFirstAttn,
+                showAttn,
+                hideParkedAttn,
             });
         }
-    }, [canvasRef, attentions, layerIdx, headIdx, seqLen, hoveringCell, hideFirstAttn]);
+    }, [canvasRef, attentions, layerIdx, headIdx, seqLen, hoveringCell, showAttn, hideParkedAttn]);
 
     return <div>
         <canvas
