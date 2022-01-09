@@ -2,6 +2,68 @@ from functools import lru_cache
 from collections import defaultdict
 from multiprocessing import Pool, Queue
 import time
+import os
+from azure.storage.blob import BlobServiceClient
+
+
+CHECKPOINT_NAMES = [
+    'step_500',
+    'step_38500',
+    'step_78500',
+    'step_118500',
+    'step_158500',
+    'step_198500',
+    'step_238500',
+    'step_278500',
+]
+
+
+def get_raw_directory(dataset_name: str, checkpoint_name: str) -> str:
+    """ Format: raw/<dataset_name>/<checkpoint_name> """
+    return os.path.join('raw', dataset_name, checkpoint_name)
+
+
+def get_index_directory(dataset_name: str, checkpoint_name: str) -> str:
+    """ Format: index/<dataset_name>/<checkpoint_name> """
+    return os.path.join('index', dataset_name, checkpoint_name)
+
+
+def get_checkpoint_blob_path(checkpoint_name: str):
+    # subject to change
+    return checkpoint_name + '.pt'
+
+
+@lru_cache(maxsize=None)
+def az_make_blob_client(blob_path: str):
+    account_name = os.environ['AZ_ACCOUNT_NAME']
+    account_key = os.environ['AZ_ACCOUNT_KEY']
+    container_name = os.environ['AZ_CONTAINER_NAME']
+    account_url = f'https://{account_name}.blob.core.windows.net'
+    blob_service_client = BlobServiceClient(account_url=account_url, credential=account_key)
+    blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
+    return blob_client
+
+
+def az_upload_file(local_fn: str, remote_fn: str):
+    client = az_make_blob_client(remote_fn)
+    with open(local_fn, 'rb') as data:
+        client.upload_blob(data, overwrite=True)
+
+
+def az_download_file(local_fn: str, remote_fn: str, max_concurrency=8):
+    client = az_make_blob_client(remote_fn)
+    with open(local_fn, 'wb') as f:
+        f.write(client.download_blob(max_concurrency=max_concurrency, validate_content=True).readall())
+
+
+def download_checkpoint(checkpoint_name: str):
+    assert checkpoint_name in CHECKPOINT_NAMES
+    if not os.path.exists('checkpoints'):
+        os.mkdir('checkpoints')
+    remote_fn = get_checkpoint_blob_path(checkpoint_name)
+    local_fn = os.path.join('checkpoints', checkpoint_name)
+    az_download_file(local_fn=local_fn, remote_fn=remote_fn)
+    return local_fn
 
 
 @lru_cache(int(1e6))
