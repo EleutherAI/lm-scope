@@ -47,7 +47,7 @@ p {
 
 .nav-bar {
     background-color: black;
-    max-width: 1024px;
+    /* max-width: 1024px; */
     height: 40px;
     line-height: 40px;
     margin: auto;

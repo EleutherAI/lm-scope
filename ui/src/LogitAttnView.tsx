@@ -28,6 +28,20 @@ const COLORS = [
     [174, 255, 0],
 ];
 
+const CHECKPOINT_NAMES = [
+    'step_500',
+    'step_38500',
+    'step_78500',
+    'step_118500',
+    'step_158500',
+    'step_198500',
+    'step_238500',
+    'step_278500',
+    'step_318500',
+    'step_358500',
+    'step_383500',
+];
+
 const layerCount = 28
 
 // Layers with index >= parkAttnStart exhibit the head parking behavior
@@ -46,6 +60,8 @@ interface LogitAttnViewProps {
     updateHideParkedAttn: (hide: boolean) => void;
     selectedLayer: number;
     updateSelectedLayer: (layer: number) => void;
+    checkpointIdx: number;
+    updateCheckpointIdx: (idx: number) => void;
 }
 
 export default function LogitAttnView({
@@ -61,6 +77,8 @@ export default function LogitAttnView({
     updateHideParkedAttn,
     selectedLayer,
     updateSelectedLayer,
+    checkpointIdx,
+    updateCheckpointIdx,
 }: LogitAttnViewProps) {
 
     useEffect(() => {
@@ -197,6 +215,42 @@ export default function LogitAttnView({
         }}
     >
         <div>
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                }}
+            >
+                <span
+                    style={{
+                        padding: '4px',
+                        marginLeft: '4px',
+                        lineHeight: '20px',
+                    }}
+                >checkpoint:</span>
+                <input
+                    type="range"
+                    min={0}
+                    max={CHECKPOINT_NAMES.length - 1}
+                    value={checkpointIdx}
+                    onChange={(e) => {console.log(e.target.value); updateCheckpointIdx(parseInt(e.target.value))}}
+                    style={{
+                        height: '20px',
+                        margin: '4px',
+                    }}
+                />
+                <span
+                    style={{
+                        padding: '4px',
+                        marginLeft: '4px',
+                        lineHeight: '20px',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold',
+                    }}
+                >
+                    {CHECKPOINT_NAMES[checkpointIdx]}
+                </span>
+            </div>
             <span
                 style={{
                     padding: '4px',

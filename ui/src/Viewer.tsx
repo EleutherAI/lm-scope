@@ -25,6 +25,7 @@ function Viewer() {
     const [loading, setLoading] = useState(false);
     const [hideParkedAttn, setHideParkedAttn] = useState(true);
     const [selectedLayer, setSelectedLayer] = useState<number>(-1);
+    const [checkpointIdx, setCheckpointIdx] = useState<number>(0);
     const selectedToken = hoveringCell ? hoveringCell.seq : -1;
 
     const debouncedUpdateResults = useMemo(() => debounce(() => {
@@ -175,6 +176,8 @@ function Viewer() {
                 updateHideParkedAttn={onUpdateHideParkedAttn}
                 selectedLayer={selectedLayer}
                 updateSelectedLayer={onUpdateLayer}
+                checkpointIdx={checkpointIdx}
+                updateCheckpointIdx={setCheckpointIdx}
             />
         </Split>
     </>;
