@@ -8,7 +8,7 @@ from lm_eval.utils import join_iters
 
 
 class CombinedDataset:
-    def __init__(self, data_dir, offset=0, limit=-1):
+    def __init__(self, offset=0, limit=-1):
         print('Loading data...')
         self.examples = self._load_examples()
         print('Dataset has', len(self.examples), 'examples')
@@ -22,9 +22,14 @@ class CombinedDataset:
             if tname in skip:
                 continue
             task = Task()
-            test_docs = task.validation_docs() if task.has_validation_docs() else task.test_docs()
-            train_docs = task.validation_docs() if task.has_validation_docs() else task.test_docs()
-            docs = join_iters([test_docs, train_docs])
+            iters = []
+            if task.has_validation_docs():
+                iters.append(task.validation_docs())
+            if task.has_test_docs():
+                iters.append(task.test_docs())
+            if task.has_training_docs():
+                iters.append(task.training_docs())
+            docs = join_iters(iters)
             for i, doc in enumerate(docs):
                 example = {
                     "prompt": task.doc_to_text(doc),
@@ -32,6 +37,7 @@ class CombinedDataset:
                     "source": tname,
                 }
                 examples.append(example)
+            print('examples:', len(examples))
         return examples
 
     def __len__(self):
@@ -40,3 +46,6 @@ class CombinedDataset:
     def __iter__(self):
         for e in self.examples:
             yield e
+
+if __name__ == '__main__':
+    CombinedDataset()

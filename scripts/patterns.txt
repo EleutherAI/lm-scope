@@ -1,0 +1,368 @@
+P39 Anton Durcovici : bishop, Randall Davidson : bishop, Silverius : pope, Ferdinando d'Adda : cardinal, Helmut Zilk : mayor
+  [X] has the position of [Y] .
+  [X], who has the position of [Y].
+  [X], whose position is that of [Y].
+  [X]'s position is [Y].
+  [X], who holds the position of [Y].
+  [X] holds the position of [Y].
+P264 Jackie Wilson : Brunswick, Larry Gatlin : Monument, Bobby Darin : Brunswick, Geeshie Wiley : Paramount, Gitarzan : Monument
+  [X] is represented by music label [Y] .
+  [X] is represented by record label [Y] .
+  [X] is represented by [Y] .
+  [X], that is represented by [Y].
+  [X], which is represented by [Y].
+  The music label representing [X] is [Y].
+  The music label that is representing [X] is [Y].
+  [X]'s label is [Y].
+  [X]'s record label is [Y].
+  [X]'s record company is [Y].
+  [X]'s music label is [Y].
+  [X] recorded for [Y].
+  [X] label : [Y].
+  [X], released by [Y].
+  [Y] recording artist [X].
+  [Y] artists such as [X].
+  [Y] artists including [X].
+P37 Guinea-Bissau : Portuguese, Kashubia : Polish, Nokia : Finnish, Salla : Finnish, Manitoba : English
+  The official language of [X] is [Y].
+  The official language of [X] is the [Y] language.
+  [Y] is the official language of [X].
+  The [Y] language is the official language of [X].
+  In [X], [Y] is the official language.
+  Officially, [Y] is the language of [X].
+  The law in [X] declares [Y] the official language.
+  The law in [X] defines [Y] as the official language.
+  The law in [X] defines the [Y] language as the official language.
+P108 UNESCO Goodwill Ambassador : UNESCO, Jeff Fager : CBS, Irina Bokova : UNESCO, Paul Dickenson : BBC, George Bodenheimer : ESPN
+  [X] works for [Y] .
+  [X], who works for [Y].
+  [X] is employed by [Y].
+  [X], who is employed by [Y].
+P131 Losiny Ostrov National Park : Moscow, KSTP-FM : Minnesota, Gulf Coast of the United States : Texas, Jennings : Louisiana, Ohio State Route 2 : Ohio
+  [X] is located in [Y] .
+  [X] is in [Y] .
+  [X] can be found in [Y] .
+P103 Polina Zherebtsova : Russian, Robert Merle : French, Ernest Monis : French, Joseph Joubert : French, Raymond Abellio : French
+  The native language of [X] is [Y].
+  The mother tongue of [X] is [Y].
+  [Y] is [X]'s native language.
+  [Y] is [X]'s mother tongue.
+P176 Nissan Terrano II : Nissan, Triumph Herald : Triumph, Dodge Nitro : Dodge, BMW 7 Series : BMW, Chevrolet Corvette (C4) : Chevrolet
+  [X] is produced by [Y].
+  [X] is developed by [Y].
+  [X], developed by [Y]
+  [X], produced by [Y]
+  [X] is created by [Y].
+  [X], created by [Y].
+  [X] is a product of [Y].
+  [X], a product of [Y],
+  [X], a product created by [Y],
+  [X], a product developed by [Y],
+  [Y], the creator of the [X]
+  [Y] and its product [X]
+P30 Kochi : Asia, Craddock Massif : Antarctica, Bermel Escarpment : Antarctica, Swedish Empire : Europe, Bruce Plateau : Antarctica
+  [X] is located in [Y].
+  [X] is located in the continent [Y].
+  [X] belongs to the continent of [Y].
+  [X] is a part of the continent of [Y].
+P178 Fortran : IBM, Amazon Fire TV : Amazon, Photo Booth : Apple, sRGB : Microsoft, AppleScript : Apple
+  [X] is developed by [Y].
+  [X] was developed by [Y].
+  [X], developed by [Y].
+  [X] is created by [Y]
+  [X] was created by [Y]
+  [X], created by [Y].
+  [X] is a product of [Y]
+  [X] was a product of [Y]
+  [X], a product of [Y]
+  [X], a product created by [Y]
+  [X], a product manufactured by [Y]
+  [X], a product developed by [Y]
+  [Y], that developed [X]
+  [Y], that created [X]
+  [Y], the creator of the [X]
+  [Y] and its product [X]
+P138 Albany International Airport : Albany, Strait of Gibraltar : Gibraltar, Southampton Central railway station : Southampton, Trinidad : Trinity, Wien-Schwechat Airport : Vienna
+  [X] is named after [Y].
+  [X] was named after [Y].
+  [X] is named for [Y].
+  [X] was named for [Y].
+  [X], which is named after [Y].
+  [X], which was named after [Y].
+  [X], which is named for [Y].
+  [X], which was named for [Y].
+  [X], named for [Y].
+  [X], named after [Y].
+  [X] is named in [Y]'s honor.
+  [X] was named in [Y]'s honor.
+  [X], named in [Y]'s honor.
+  [X], which is named in [Y]'s honor.
+  [X], which was named in [Y]'s honor.
+  [X] is called after [Y].
+  [X] was called after [Y].
+  [X], which is called after [Y].
+  [X], which was called after [Y].
+  [X], called after [Y].
+P47 Hauts-de-Seine : Paris, Turkey : Armenia, Slovakia : Poland, Leinster : Ulster, Guinea-Bissau : Guinea
+  [X] shares border with [Y].
+  [X] borders with [Y].
+  [X] shares the border with [Y].
+  [X] shares its border with [Y].
+  [X] shares a common border with [Y].
+  [Y] borders with [X].
+  [Y] shares the border with [X].
+  [Y] shares its border with [X].
+  [Y] shares a common border with [X].
+P17 Pontecorvo : Italy, Tiv people : Nigeria, Tirebolu : Turkey, Kojur District : Iran, Hadzhidimovo : Bulgaria
+  [X] is located in [Y] .
+  [X], which is located in [Y].
+  [X], located in [Y].
+P413 Patrick Roy : goaltender, Manuel Ruiz Sosa : midfielder, Brian Steen Nielsen : midfielder, Marcus Randall : quarterback, Thurman Munson : catcher
+  [X] plays in [Y] position.
+  [X] plays in the position of [Y].
+  [X], who plays in [Y] position.
+  playing as a [Y], [X]
+  playing as an [Y], [X]
+  [X] plays as [Y]
+P27 Thomas Bo Larsen : Denmark, Shadi Sadr : Iran, Tommy McCook : Jamaica, Takeshi Urata : Japan, Imanol Landeta : Mexico
+  [X] is [Y] citizen.
+  [X] is a citizen of [Y].
+  [X], a citizen of [Y].
+  [X], who is a citizen of [Y].
+  [X] holds a citizenship of [Y].
+  [X] has a citizenship of [Y].
+  [X], who holds a citizenship of [Y].
+  [X], who has a citizenship of [Y].
+  as a citizen of [Y], [X]
+P463 The Football Association : FIFA, Canada : NATO, Chinese Taipei Football Association : FIFA, Algerian Football Federation : FIFA, Hellenic Football Federation : FIFA
+  [X] is a member of [Y].
+  [X] belongs to the organization of [Y].
+  [X] is a part of the [Y] organization.
+  [X] is affiliated with [Y].
+  [X] is affiliated with the [Y] organization.
+P364 Evangelium Vitae : Latin, Gai pied : French, Vathiyar : Tamil, Yaamirukka Bayamey : Tamil, Hussar Ballad : Russian
+  The original language of [X] is [Y].
+  The original language of [X] was [Y].
+  The language of [X] is [Y].
+  The language of [X] was [Y].
+  [Y] is the language of [X].
+  [Y] was the language of [X].
+P495 Canadian Club : Canada, Aalog-Alog : Philippines, Bezimienni bohaterowie : Poland, Supersister : Netherlands, Skavlan : Sweden
+  [X] was created in [Y].
+  [X], that was created in [Y].
+  [X], created in [Y].
+  [X], that originated in [Y].
+  [X] originated in [Y].
+  [X] formed in [Y].
+  [X] was formed in [Y].
+  [X], that was formed in [Y].
+  [X] was formulated in [Y].
+  [X], formulated in [Y].
+  [X], that was formulated in [Y].
+  [X] was from [Y].
+  [X], who was from [Y].
+  [X], from [Y].
+  [X], that was developed in [Y].
+  [X] was developed in [Y].
+  [X], developed in [Y].
+P449 Whew! : CBS, Howdy Doody : NBC, Planet Forward : PBS, Al TV : MTV, Ghost Whisperer : CBS
+  [X] was originally aired on [Y].
+  [X] is to debut on [Y].
+  [Y] is to debut [X].
+  [Y] debuted [X].
+  [X] debuted on [Y].
+  the [Y] debut of [X].
+  the [Y] release of [X].
+  [X] was released on [Y].
+  [Y] released [X].
+  [X] premiered on [Y].
+  [X] premieres on [Y].
+P20 Bruno Pittermann : Vienna, Robert MacBryde : Dublin, Charles IV of Spain : Rome, Theo Crosby : London, Minoru Yasui : Denver
+  [X] died in [Y].
+  [X] died at [Y].
+  [X] passed away in [Y].
+  [X] passed away at [Y].
+  [X] expired at [Y].
+  [X] lost their life at [Y].
+  [X]'s life ended in [Y].
+  [X] succumbed at [Y].
+P1376 Munich : Munich, Rome : Italy, Conakry : Guinea, Cairo : Egypt, Antananarivo : Madagascar
+  [X] is the capital of [Y].
+  The capital of [Y] is [X].
+  The capital city of [Y] is [X].
+  [X] is the capital city of [Y].
+  [Y]'s capital, [X].
+  [Y]'s capital city, [X].
+  [Y]'s capital is [X].
+  [Y]'s capital city is [X].
+  [X], the capital of [Y].
+  [X], the capital city of [Y].
+  [X], that is the capital of [Y].
+  [X], that is the capital city of [Y].
+  [Y], which has the capital [X].
+  [Y], which has the capital city [X].
+P1001 Gujarat Legislative Assembly : Gujarat, President of Mexico : Mexico, President of Austria : Austria, Maharaja : India, Vice-Chancellor of Germany : Germany
+  [X] is a legal term in [Y] .
+P361 catabolism : metabolism, Proverbs : Bible, ecological pyramid : ecosystem, Torah : Bible, House, season 1 : House
+  [X] is part of [Y].
+  [X] is a part of [Y].
+P36 Kingdom of Gwynedd : Chester, Wisconsin : Madison, County Durham : Durham, Munich : Munich, Ransom County : Lisbon
+  The capital of [X] is [Y] .
+  The capital city of [X] is [Y].
+  [Y] is the capital of [X].
+  [Y] is the capital city of [X].
+  [X]'s capital, [Y].
+  [X]'s capital city, [Y].
+  [X]'s capital is [Y].
+  [X]'s capital city is [Y].
+  [Y], the capital of [X].
+  [Y], the capital city of [X].
+  [Y], that is the capital of [X].
+  [Y], that is the capital city of [X].
+  [X], which has the capital [Y].
+  [X], which has the capital city [Y].
+P1303 Nick Didkovsky : guitar, Jared Leto : violin, Roy Shepherd : piano, Pat Sansone : guitar, Jill Tracy : piano
+  [X] plays [Y] .
+  [Y] player [X] 
+  [X] plays the [Y] .
+  [X] is a [Y] player.
+P530 Belarus : Netherlands, Australia : Bulgaria, Zambia : Israel, Saudi Arabia : Morocco, Norway : Italy
+  [X] maintains diplomatic relations with [Y].
+  [Y] maintains diplomatic relations with [X].
+  [X] ties diplomatic relations with [Y].
+  [Y] ties diplomatic relations with [X].
+  [X] has diplomatic relations with [Y].
+  [Y] has diplomatic relations with [X].
+  [X], which has diplomatic relations with [Y]
+  [Y], which has diplomatic relations with [X]
+  [Y], which ties diplomatic relations with [X]
+P19 Michael Balcon : Birmingham, Sib Hashian : Boston, Mark Johnston-Allen : Bristol, Philip Walsingham Sergeant : London, DJ Die : Devon
+  [X] was born in [Y].
+  [X] is originally from [Y].
+  [X] was originally from [Y].
+  [X] is native to [Y].
+  [X] was native to [Y].
+  [X] originated from [Y].
+  [X] originates from [Y].
+  [X] was a [Y]-born person.
+  [X] was an [Y]-born person.
+  [X] is a [Y]-born person.
+  [X] is an [Y]-born person.
+  [X], a [Y]-born person.
+  [X], an [Y]-born person.
+P190 Casablanca : Tokyo, Santo Domingo : Havana, Istanbul : Warsaw, Buenos Aires : Warsaw, Florence : Budapest
+  [X] and [Y] are twin cities.
+  [Y] and [X] are twin cities.
+  [Y] is a twin city of [X].
+  [X] is a twin city of [Y].
+P740 NQ Arbuckle : Toronto, Accademia Pontaniana : Naples, Oh Laura : Stockholm, Base Ball Bear : Tokyo, Robomodo : Chicago
+  [X] was founded in [Y].
+  [X], founded in [Y].
+  [X] that was founded in [Y].
+  [X], that was started in [Y].
+  [X] started in [Y].
+  [X] was started in [Y]
+  [X], that was created in [Y].
+  [X], created in [Y].
+  [X] was created in [Y].
+  [X], that originated in [Y].
+  [X] originated in [Y].
+  [X] formed in [Y].
+  [X] was formed in [Y].
+  [X], that was formed in [Y].
+P136 Curtis Clark : jazz, Ole Mathisen : jazz, The Darrell Schweitzer Megapack : fantasy, Postcards Records : jazz, Sal Salvador : jazz
+  [X] plays [Y] music .
+  [X], who plays [Y] music
+  [X] plays [Y].
+  [X], who plays [Y].
+  [Y] musicians [X].
+  [Y] musicians such as [X].
+P127 Bundesautobahn 98 : Germany, Bundesautobahn 67 : Germany, The Night Watch : Amsterdam, Neyland Stadium : Tennessee, Digital Audio Stationary Head : Sony
+  [X] is owned by [Y] .
+  [X] owner [Y] .
+  [Y] owns [X] .
+  The [Y]-owned [X]
+P1412 Edward J. King : English, Suzanne Malherbe : French, Kazimierz Wyka : Polish, Yu-seon : Korean, Steve Biko : English
+  [X] used to communicate in [Y] .
+  [X] communicated in [Y] .
+  [X] typically used [Y] to communicate .
+  [X] used [Y] to communicate .
+  [Y] was a language used by [X] .
+  [Y] is the language used by [X] .
+  [Y] is the language typically used by [X] .
+  [X] used the [Y] language .
+P407 Internet Archive : English, Zenyatta Mondatta : English, Hold Me Tight : English, Tzena, Tzena, Tzena : Hebrew, Bernama : English
+  [X] was written in [Y].
+  [X] is written in [Y].
+  [X] was written in the [Y] language.
+  [X] is written in the [Y] language.
+  [X], written in the [Y] language.
+  The language of [X] is [Y].
+  The language of [X] was [Y].
+  [X] is a [Y]-language work.
+  [X] is an [Y]-language work.
+  [X], a [Y]-language work.
+  [X], an [Y]-language work.
+  [X] was a [Y]-language work.
+  [X] was an [Y]-language work.
+  [X] is a work in the [Y] language.
+  [X] was a work in the [Y] language.
+  The [Y]-language creation [X]
+  [Y] is the language of [X].
+  [Y] was the language of [X].
+P140 Ennin : Buddhism, Goguryeo : Buddhism, Hsing Yun : Buddhism, Suharto : Islam, Abd Allah ibn al-Zubayr : Islam
+  [X] is affiliated with the [Y] religion .
+  [X] follows the [Y] religion.
+  [X] is follower of [Y].
+  [Y] is [X]'s official religion.
+P279 classical conditioning : reflex, homosexuality : LGBT, DSG1 : gene, Shagreen : leather, toonie : coin
+  [X] is a subclass of [Y].
+  [X], which is a subclass of [Y].
+  [X],  a subclass of [Y].
+  [X],  a type of [Y].
+P276 Abraj Al Bait : Mecca, World War II in Yugoslavia : Yugoslavia, University of Edinburgh : Edinburgh, Northern Suburbs Rugby Club : Sydney, Space Shuttle Columbia disaster : Louisiana
+  [X] is located in [Y] .
+  [X] is in [Y] .
+P159 Heart Attack Grill : Chandler, Boston Athletic Association : Boston, Pagan Federation : London, Northlands : Edmonton, Viper Comics : Dallas
+  The headquarter of [X] is in [Y] .
+  The headquarters of [X] is in [Y] .
+  The headquarter of [X] is located in [Y] .
+  [Y] contains the headquarters of [X].
+  [X] is headquartered in [Y].
+  [Y] has the headquarters of [X].
+  [X]'s headquarters are in [Y].
+  [X], whose headquarters are in [Y].
+  [Y] is home to [X].
+  [X] is based in [Y].
+P106 Jim Grimsley : novelist, Peter Early : politician, John Clayton Allen : politician, Michael McKell : actor, Jack Buetel : actor
+  [X] is a [Y] by profession.
+  [X] is an [Y] by profession.
+  [X] is a [Y] by training.
+  [X] is an [Y] by training.
+  [X] works as [Y].
+  [X], who works as [Y].
+  [X]'s occupation is [Y]
+  the occupation of [X] is [Y].
+  [X]'s profession is a [Y].
+  [X]'s profession is an [Y].
+  the profession of [X] is [Y].
+P101 John Wallis : mathematics, Christian Wilhelm Blomstrand : chemistry, Robert Bigelow : hotel, Stephen Hales : physiology, LGBT social movements : LGBT
+  [X] works in the field of [Y].
+  [X] specializes in [Y].
+  [Y] is the specialization of [X].
+  The expertise of [X] is [Y].
+  [Y] is the expertise of [X].
+  The domain of activity of [X] is [Y].
+  The domain of work of [X] is [Y].
+  [Y] is the domain of activity of [X].
+  [X]'s area of work is [Y].
+  [X]'s domain of work is [Y].
+  [X]'s domain of activity is [Y].
+  [X]'s expertise is [Y].
+  [X] works in the area of [Y].
+P937 Gottfried August Homilius : Dresden, Frederick Banbury, 1st Baron Banbury of Southam : London, Laurent Cars : Paris, Lise Meitner : Stockholm, Lucio Colletti : Rome
+  [X] used to work in [Y] .
+  [X] found employment in [Y].
+  [X] was employed in [Y].
+  [X] worked in [Y].
+  [X] took up work in [Y].
