@@ -4,6 +4,9 @@ from multiprocessing import Pool, Queue
 import time
 import os
 from azure.storage.blob import BlobServiceClient
+import random
+import torch
+import numpy as np
 
 
 CHECKPOINT_NAMES = [
@@ -16,6 +19,12 @@ CHECKPOINT_NAMES = [
     'step_238500',
     'step_278500',
 ]
+
+
+def set_seed(seed):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
 
 
 def get_raw_directory(dataset_name: str, checkpoint_name: str) -> str:
