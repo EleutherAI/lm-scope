@@ -151,15 +151,10 @@ def iter_hidden_neurons():
         for f in range(4096*4):
             yield l, f
 
-class timeit(object):
-    def __init__(self):
-        pass
-
+class timeit:
     def __enter__(self):
         self.st = time.time()
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         en = time.time()
-        st = self.st
-        print(en-st)
-
+        print(en-self.st)

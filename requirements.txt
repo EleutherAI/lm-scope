@@ -5,3 +5,4 @@ jsonlines
 azure-storage-blob
 GitPython
 tqdm
+git+https://github.com/jmerizia/knowledge-neurons.git@gpt-j-support

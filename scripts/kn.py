@@ -28,8 +28,11 @@ def main(batch_size=1,
          checkpoint_fn='/mnt/data/checkpoints/pytorch_model.bin',
          results_dir='gpt_j_neurons_pararel',
          adaptive_threshold=0.3,
+         start=0,
+         end=99999999,
          p=0.3,
          seed=42,
+         device_ids='all',
          ):
     """
     Identify the Knowledge Neurons of GPT-J
@@ -37,28 +40,28 @@ def main(batch_size=1,
 
     set_seed(seed)
 
+    if device_ids == 'all':
+        devices = [torch.device(f'cuda:{i}') for i in range(torch.cuda.device_count())]
+    else:
+        assert len(device_ids) <= torch.cuda.device_count()
+        devices = [torch.device(f'cuda:{i}') for i in device_ids]
+    print('Using devices:', devices)
+    device_map = make_device_map(num_layers=28, num_devices=len(devices))
+    print(device_map)
+
+    print('Loading tokenizer...')
+    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
+
+    print('Loading model from checkpoint...')
+    model = GPTJForCausalLM.from_pretrained(checkpoint_fn, config="EleutherAI/gpt-j-6B")
+    print('Parallelizing model onto GPUs...')
+    model.parallelize(device_map)
+    model.eval()
+
     # Loading PareRel Dataset
     PARAREL = pararel_expanded(autoregressive=True)
-    INDICES = list(range(len(PARAREL)))
+    INDICES = list(range(len(PARAREL)))[start:end]
     KEYS = list(PARAREL.keys())
-
-    with timeit():
-        devices = [torch.device(f'cuda:{i}') for i in range(torch.cuda.device_count())]
-        print('Found', len(devices), 'devices')
-        device_map = make_device_map(num_layers=28, num_devices=len(devices))
-
-        print('Loading tokenizer...')
-        tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
-
-        print('Loading model checkpoint to state dict...')
-        state_dict = torch.load(checkpoint_fn, map_location='cpu')
-        print('Creating model with state dict...')
-        model = GPTJForCausalLM.from_pretrained(None, state_dict=state_dict, config="EleutherAI/gpt-j-6B")
-        print('Parallelizing model onto GPUs...')
-        model.parallelize(device_map)
-        model.eval()
-
-    quit()
 
     kn = KnowledgeNeurons(model, tokenizer, model_type='gpt-j', device='cuda:0')
 
