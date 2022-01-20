@@ -12,3 +12,4 @@ output/
 checkpoints/
 lm_cache/
 datasets/
+prompts.jsonl

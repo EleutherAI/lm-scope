@@ -7,6 +7,7 @@ from azure.storage.blob import BlobServiceClient
 import random
 import torch
 import numpy as np
+from transformers import AutoTokenizer, GPTJForCausalLM
 
 
 CHECKPOINT_NAMES = [
@@ -98,14 +99,44 @@ class StopWatch:
             print(k.ljust(10) + ':', f'{v:.5f}')
 
 
-def make_device_map(num_layers, num_devices):
-    device_ids = list(range(num_devices))
-    num_layers_per_device = num_layers // len(device_ids)
-    layer_distribution = [num_layers_per_device + (1 if i < num_layers % len(device_ids) else 0) for i in device_ids]
+def partition(n, parts):
+    return [n // parts + (1 if i < n % parts else 0) for i in range(parts)]
+
+
+def prefix_sums(v):
+    s = 0
+    ret = []
+    for e in v:
+        ret.append(s)
+        s += e
+    return ret
+
+
+def divide_optimally(v, parts):
+    sizes = partition(len(v), parts)
+    offsets = prefix_sums(sizes)
+    buckets = []
+    for size, offset in zip(sizes, offsets):
+        s = v[offset:offset+size]
+        buckets.append(s)
+    return buckets
+
+
+def divide_optimally_and_scatter(v, comm):
+    if comm.Get_rank() == 0:
+        v = divide_optimally(v, comm.Get_size())
+    else:
+        v = None
+    v = comm.scatter(v, root=0)
+    return v
+
+
+def make_device_map(num_layers, device_ids):
+    layer_distribution = partition(num_layers, len(device_ids))
     device_map = {}
     c = 0
     for i, l in enumerate(layer_distribution):
-        device_map[i] = list(range(c, c+l))
+        device_map[device_ids[i]] = list(range(c, c+l))
         c += l
     return device_map
 
@@ -135,7 +166,6 @@ def pmap(f, gen, np):
 
 
 def iter_buckets(v, sz):
-    p = Pool(sz)
     bucket = []
     for e in v:
         bucket.append(e)
@@ -158,3 +188,34 @@ class timeit:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         en = time.time()
         print(en-self.st)
+
+
+def load_gptj_model(
+    device_ids=None,
+    checkpoint_fn=None,
+):
+
+    if device_ids is None:
+        devices_ids = range(torch.cuda.device_count())
+    device_map = make_device_map(num_layers=28, device_ids=device_ids)
+    print('device map:', device_map)
+
+    if checkpoint_fn is None:
+        print('Loading model...')
+        model = GPTJForCausalLM.from_pretrained("EleutherAI/gpt-j-6B")
+    else:
+        print(f'Loading model from checkpoint {checkpoint_fn}...')
+        model = GPTJForCausalLM.from_pretrained(checkpoint_fn, config="EleutherAI/gpt-j-6B")
+    print('Parallelizing model onto GPUs...')
+    model.parallelize(device_map)
+    model.eval()
+
+    return model, device_map
+
+
+def load_gptj_tokenizer(pad_token=None):
+    print('Loading tokenizer...')
+    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B", pad_token=pad_token)
+    return tokenizer
+
+
