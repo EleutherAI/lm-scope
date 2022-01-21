@@ -13,3 +13,4 @@ checkpoints/
 lm_cache/
 datasets/
 prompts.jsonl
+kn_data/

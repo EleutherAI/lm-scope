@@ -27,13 +27,17 @@ from utils import (
     load_gptj_tokenizer,
     iter_buckets,
     divide_optimally_and_scatter,
+    divide_optimally,
 )
 
 
 def main(
-    batch_size=16,
+    batch_size=8,
     checkpoint_fn='/mnt/data/checkpoints/pytorch_model.bin',
-    num_gpus_per_rank=4,
+    num_gpus_per_rank=2,
+    data_dir='kn_data',
+    parts=1,
+    part_idx=0,
 ):
 
     comm = MPI.COMM_WORLD
@@ -79,6 +83,7 @@ def main(
 
     # get a list of ground truth values, and divide it between the workers
     gts = list(set(e['gt'] for e in prompts))
+    gts = divide_optimally(gts, parts)[part_idx]
     print(max([len(gt) for gt in gts]))
     local_gts = divide_optimally_and_scatter(gts, comm)
     local_gts = set(local_gts)
@@ -91,10 +96,10 @@ def main(
         if e['gt'] in local_gts and len(gt2prompts[e['gt']]) < 30:
             gt2prompts[e['gt']].append(e['prompt'])
 
-    # now lets prune ground truths with too few prompts (< 5)
+    # now lets prune ground truths with too few prompts (< 4)
     gts = list(gt2prompts.keys())
     for gt in local_gts:
-        if len(gt2prompts[gt]) < 5:
+        if len(gt2prompts[gt]) < 4:
             gt2prompts.pop(gt, None)
     print('Pruned to', len(gt2prompts.keys()), 'ground truths on rank', rank)
 
@@ -108,7 +113,8 @@ def main(
         #    input_ids, _, _ = prep_batch(batch)
         #    out = model(input_ids)
 
-        for gt in tqdm(gt2prompts.keys(), position=rank):
+        bar = tqdm(gt2prompts.keys(), position=rank)
+        for gt in bar:
             if len(pruned_gt2prompts[gt]) >= 6:
                 # we have reached the desired sample size for this ground truth value
                 continue
@@ -126,15 +132,36 @@ def main(
                     #top_tokens = [tokenizer.decode([idx]) for idx in top_indices]
                     gt_rank = (logits.argsort(descending=True) == gt_ids[i]).nonzero(as_tuple=True)[0].item() + 1
                     if gt_rank >= 30:
-                        pruned_gt2prompts[gt].append(e)
+                        pruned_gt2prompts[gt].append(batch[i])
                     # print(f'{i} {logprob:.2f} {prop * 100:.2f}% {gt_rank}')
+            # count number of ground truths that we have enough prompts for:
+            good_count = len([k for k, v in pruned_gt2prompts.items() if len(v) >= 4])
+            bar.set_description(str(good_count))
 
-        with jsonlines.open(f'fn_prompts_{rank}.jsonl', 'w') as writer:
-            for gt, prompt in pruned_gt2prompts.items():
-                writer.write({
-                    'prompt': prompt,
-                    'gt': gt,
-                })
+        comm.Barrier()
+
+        good_count = len([k for k, v in pruned_gt2prompts.items() if len(v) >= 4])
+        print('Found at least 4 ideal prompts for', good_count, 'ground truth values')
+
+        if rank == 0:
+            if os.path.exists(data_dir):
+                os.system(f"rm -rf {data_dir}")
+            os.mkdir(data_dir)
+
+        total = sum(len(ps) for gt, ps in pruned_gt2prompts.items())
+
+        comm.Barrier()
+
+        fn = os.path.join(data_dir, f'pruned_prompts_part{part_idx}_rank{rank}.jsonl')
+        print('Saving', total, 'prompts to', fn, '...')
+        with jsonlines.open(fn, 'w') as writer:
+            for gt, ps in pruned_gt2prompts.items():
+                for p in ps:
+                    writer.write({
+                        'prompt': p,
+                        'gt': gt,
+                    })
+
 
 if __name__ == '__main__':
     fire.Fire(main)
